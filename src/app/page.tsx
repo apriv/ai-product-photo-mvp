@@ -250,12 +250,25 @@ export default function Home() {
       setStatus("生成中...");
 
       let data;
+      let responseText = "";
       try {
-        data = await response.json();
+        responseText = await response.text();
+        debug.log("Response received", {
+          textLength: responseText.length,
+          textPreview: responseText.substring(0, 200),
+        });
+
+        data = JSON.parse(responseText);
         debug.log("Response JSON parsed", { success: data.success, hasImageUrl: !!data.imageUrl, version: data.version });
       } catch (parseError) {
-        debug.error("Failed to parse response JSON", parseError);
-        throw new Error("服务器响应格式错误");
+        debug.error("Failed to parse response JSON", {
+          error: parseError instanceof Error ? parseError.message : String(parseError),
+          responseStatus: response.status,
+          responseStatusText: response.statusText,
+          responseTextLength: responseText.length,
+          responseTextPreview: responseText.substring(0, 500),
+        });
+        throw new Error(`服务器响应错误 (${response.status}): ${responseText.substring(0, 100)}`);
       }
 
       // 版本检查：如果服务器版本与客户端版本不同，刷新页面
