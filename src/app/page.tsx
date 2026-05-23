@@ -23,7 +23,7 @@ export default function Home() {
   const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [image, setImage] = useState<string | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState("抠图主图");
+  const [selectedTemplate, setSelectedTemplate] = useState("社媒海报");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string>("");
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);

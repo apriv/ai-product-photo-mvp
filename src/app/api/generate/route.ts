@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     }
 
     const image = formData.get("image");
-    template = String(formData.get("template") || "抠图主图");
+    template = String(formData.get("template") || "社媒海报");
 
     if (!image || !(image instanceof File)) {
       logger.warn("No image file received", { ...requestMeta, template });
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
     }
 
     // 抠图
-    if (template === "抠图主图") {
+    if (template === "仅抠图") {
       try {
         const modelStartTime = Date.now();
         logger.info("Starting AI model processing", {
