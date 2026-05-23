@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { fal } from "@fal-ai/client";
 import sharp from "sharp";
+import {
+  getAccessPassword,
+  validateAccessPassword,
+} from "@/lib/access-control";
 import logger from "@/lib/logger";
 
 fal.config({
@@ -59,6 +63,20 @@ export async function POST(request: Request) {
 
   try {
     const formData = await request.formData();
+    const access = validateAccessPassword(getAccessPassword(formData));
+
+    if (!access.ok) {
+      logger.warn("Generate request rejected by access control", {
+        status: access.status,
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: access.error,
+        },
+        { status: access.status }
+      );
+    }
 
     const image = formData.get("image");
     template = String(formData.get("template") || "抠图主图");

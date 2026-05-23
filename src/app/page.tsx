@@ -1,7 +1,11 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
+import {
+  ACCESS_PASSWORD_FIELD,
+  ACCESS_PASSWORD_STORAGE_KEY,
+} from "@/lib/access-shared";
 
 const templates = [
   {
@@ -84,6 +88,10 @@ async function compressImage(file: File): Promise<File> {
 }
 
 export default function Home() {
+  const [accessPassword, setAccessPassword] = useState("");
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [accessLoading, setAccessLoading] = useState(false);
+  const [accessError, setAccessError] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState("抠图主图");
@@ -91,6 +99,77 @@ export default function Home() {
   const [status, setStatus] = useState<string>("");
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
+
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      const savedPassword = localStorage.getItem(ACCESS_PASSWORD_STORAGE_KEY);
+      if (!savedPassword) {
+        return;
+      }
+
+      setAccessPassword(savedPassword);
+
+      fetch("/api/access", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          [ACCESS_PASSWORD_FIELD]: savedPassword,
+        }),
+      })
+        .then(async (response) => {
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.error || "访问密码错误");
+          }
+          setIsUnlocked(true);
+        })
+        .catch(() => {
+          localStorage.removeItem(ACCESS_PASSWORD_STORAGE_KEY);
+          setAccessPassword("");
+        });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, []);
+
+  const handleUnlock = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!accessPassword) {
+      setAccessError("请输入访问密码");
+      return;
+    }
+
+    setAccessLoading(true);
+    setAccessError("");
+
+    try {
+      const response = await fetch("/api/access", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          [ACCESS_PASSWORD_FIELD]: accessPassword,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "访问密码错误");
+      }
+
+      localStorage.setItem(ACCESS_PASSWORD_STORAGE_KEY, accessPassword);
+      setIsUnlocked(true);
+    } catch (error) {
+      localStorage.removeItem(ACCESS_PASSWORD_STORAGE_KEY);
+      setAccessError(error instanceof Error ? error.message : "访问密码错误");
+    } finally {
+      setAccessLoading(false);
+    }
+  };
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
@@ -128,6 +207,7 @@ export default function Home() {
       const formData = new FormData();
       formData.append("image", file);
       formData.append("template", selectedTemplate);
+      formData.append(ACCESS_PASSWORD_FIELD, accessPassword);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分钟超时
@@ -143,6 +223,12 @@ export default function Home() {
       setStatus("生成中...");
 
       const data = await response.json();
+
+      if (response.status === 401) {
+        localStorage.removeItem(ACCESS_PASSWORD_STORAGE_KEY);
+        setIsUnlocked(false);
+        setAccessPassword("");
+      }
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || "生成失败，请重试");
@@ -167,6 +253,50 @@ export default function Home() {
     multiple: false,
     disabled: loading,
   });
+
+  if (!isUnlocked) {
+    return (
+      <main className="min-h-screen bg-gray-50 px-6 py-10">
+        <div className="mx-auto max-w-md rounded-2xl bg-white p-8 shadow">
+          <h1 className="text-3xl font-bold text-gray-900">AI 商品图生成器</h1>
+
+          <form onSubmit={handleUnlock} className="mt-8">
+            <label
+              htmlFor="access-password"
+              className="text-sm font-medium text-gray-700"
+            >
+              访问密码
+            </label>
+            <input
+              id="access-password"
+              type="password"
+              value={accessPassword}
+              onChange={(event) => {
+                setAccessPassword(event.target.value);
+                setAccessError("");
+              }}
+              className="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-black"
+              autoComplete="current-password"
+            />
+
+            {accessError && (
+              <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {accessError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={accessLoading}
+              className="mt-6 w-full rounded-xl bg-black py-3 font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+            >
+              {accessLoading ? "校验中..." : "进入"}
+            </button>
+          </form>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">
