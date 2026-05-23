@@ -1,7 +1,7 @@
 const TARGET_SIZE = 1 * 1024 * 1024; // 1MB target after compression (Nginx safe)
-const MAX_IMAGE_EDGE = 3840;
-const MIN_JPEG_QUALITY = 0.5;
-const INITIAL_JPEG_QUALITY = 0.85;
+const MAX_IMAGE_EDGE = 2560; // Reduced from 3840 for better compression
+const MIN_JPEG_QUALITY = 0.3; // Lowered from 0.5 for aggressive compression
+const INITIAL_JPEG_QUALITY = 0.8; // Slightly lower starting point
 const QUALITY_STEP = 0.05;
 
 export type CompressionInfo = {
@@ -131,6 +131,15 @@ export async function compressImage(file: File): Promise<CompressionResult> {
 
   if (!bestBlob) {
     throw new Error("图片压缩失败");
+  }
+
+  // Validate final size - ensure we never exceed TARGET_SIZE
+  if (bestBlob.size > TARGET_SIZE) {
+    const sizeInMB = (bestBlob.size / 1024 / 1024).toFixed(2);
+    const targetMB = (TARGET_SIZE / 1024 / 1024).toFixed(1);
+    throw new Error(
+      `图片过于复杂，压缩后仍有 ${sizeInMB}MB（目标 ${targetMB}MB）。请尝试：上传尺寸更小的原图，或使用其他模板，或裁剪图片后重试`
+    );
   }
 
   return {

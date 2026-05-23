@@ -46,12 +46,10 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [compressionInfo, setCompressionInfo] =
     useState<CompressionInfo | null>(null);
-  const [serverVersion, setServerVersion] = useState<string>("");
-  const [clientVersion] = useState<string>(new Date().getTime().toString());
 
   useEffect(() => {
     const frameId = window.requestAnimationFrame(() => {
-      debug.log("App initialized", { clientVersion });
+      debug.log("App initialized");
       
       const savedPassword = localStorage.getItem(ACCESS_PASSWORD_STORAGE_KEY);
       if (!savedPassword) {
@@ -72,12 +70,9 @@ export default function Home() {
       })
         .then(async (response) => {
           const data = await response.json();
-          debug.log("Access validation response", { status: response.status, success: data.success, version: data.version });
+          debug.log("Access validation response", { status: response.status, success: data.success });
           
-          if (data.version) {
-            setServerVersion(data.version);
-            debug.log("Server version detected", { serverVersion: data.version, clientVersion });
-          }
+
           
           if (!response.ok || !data.success) {
             throw new Error(data.error || "访问密码错误");
@@ -93,7 +88,7 @@ export default function Home() {
     });
 
     return () => window.cancelAnimationFrame(frameId);
-  }, [clientVersion]);
+  }, []);
 
   const handleUnlock = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -183,8 +178,9 @@ export default function Home() {
       setGeneratedImage(null);
       setStatus("");
     } catch (error) {
-      debug.error("Image compression failed", error);
-      setErrorMessage("图片处理失败，请尝试其他图片");
+      const errorMsg = error instanceof Error ? error.message : "图片处理失败，请尝试其他图片";
+      debug.error("Image compression failed", { error: errorMsg });
+      setErrorMessage(errorMsg);
       setStatus("");
     }
   }, []);
@@ -257,7 +253,7 @@ export default function Home() {
         });
 
         data = JSON.parse(responseText);
-        debug.log("Response JSON parsed", { success: data.success, hasImageUrl: !!data.imageUrl, version: data.version });
+        debug.log("Response JSON parsed", { success: data.success, hasImageUrl: !!data.imageUrl });
       } catch (parseError) {
         debug.error("Failed to parse response JSON", {
           error: parseError instanceof Error ? parseError.message : String(parseError),
@@ -269,23 +265,7 @@ export default function Home() {
         throw new Error(`服务器响应错误 (${response.status}): ${responseText.substring(0, 100)}`);
       }
 
-      // 版本检查：如果服务器版本与客户端版本不同，刷新页面
-      if (data.version && data.version !== serverVersion && serverVersion) {
-        debug.warn("Server version mismatch, reloading page", {
-          oldVersion: serverVersion,
-          newVersion: data.version,
-        });
-        setServerVersion(data.version);
-        // 等待1秒再刷新，让用户看到提示
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-        throw new Error("检测到新版本，正在重新加载...");
-      }
 
-      if (data.version) {
-        setServerVersion(data.version);
-      }
 
       if (response.status === 401) {
         debug.warn("Unauthorized response, clearing session");
