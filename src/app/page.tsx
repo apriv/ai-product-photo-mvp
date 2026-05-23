@@ -190,10 +190,8 @@ export default function Home() {
   }, []);
 
   const handleGenerate = async () => {
-    const uploadFile =
-      shouldUseOriginalUpload(selectedTemplate) && originalFile
-        ? originalFile
-        : file;
+    // 总是使用压缩文件，确保 Nginx 不会拒绝 (< 1MB)
+    const uploadFile = file;
 
     if (!uploadFile) {
       debug.warn("No file selected for upload");
@@ -205,7 +203,7 @@ export default function Home() {
       fileName: uploadFile.name,
       fileSize: uploadFile.size,
       fileSizeMB: (uploadFile.size / 1024 / 1024).toFixed(2),
-      isOriginal: shouldUseOriginalUpload(selectedTemplate) && !!originalFile,
+      fileType: "compressed",
       mimeType: uploadFile.type,
     });
 
@@ -425,11 +423,6 @@ export default function Home() {
               {compressionInfo && (
                 <p className="text-sm text-gray-500">
                   尺寸: {compressionInfo.width} x {compressionInfo.height}
-                </p>
-              )}
-              {shouldUseOriginalUpload(selectedTemplate) && originalFile && (
-                <p className="text-sm text-gray-500">
-                  当前模板将使用原图: {formatFileSize(originalFile.size)}
                 </p>
               )}
               <p className="text-sm text-gray-500">点击或拖拽更换图片</p>

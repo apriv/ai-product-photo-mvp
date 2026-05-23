@@ -1,8 +1,8 @@
-const TARGET_SIZE = 2 * 1024 * 1024; // 2MB target after compression
-const MAX_IMAGE_EDGE = 4096;
-const MIN_JPEG_QUALITY = 0.55;
-const INITIAL_JPEG_QUALITY = 0.9;
-const QUALITY_STEP = 0.08;
+const TARGET_SIZE = 1 * 1024 * 1024; // 1MB target after compression (Nginx safe)
+const MAX_IMAGE_EDGE = 3840;
+const MIN_JPEG_QUALITY = 0.5;
+const INITIAL_JPEG_QUALITY = 0.85;
+const QUALITY_STEP = 0.05;
 
 export type CompressionInfo = {
   originalSize: number;
