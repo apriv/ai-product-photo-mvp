@@ -11,7 +11,7 @@ import {
   CompressionInfo,
   formatFileSize,
 } from "@/lib/image-compression";
-import { shouldUseOriginalUpload, templates } from "@/lib/templates";
+import { templates } from "@/lib/templates";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -417,21 +417,24 @@ export default function Home() {
                 {compressionInfo?.wasCompressed
                   ? `已压缩: ${formatFileSize(
                       compressionInfo.originalSize
-                    )} -> ${formatFileSize(compressionInfo.compressedSize)}`
-                  : file && `大小: ${formatFileSize(file.size)}`}
+                    )} → ${formatFileSize(compressionInfo.compressedSize)}`
+                  : file && `文件: ${formatFileSize(file.size)}`}
               </p>
               {compressionInfo && (
                 <p className="text-sm text-gray-500">
-                  尺寸: {compressionInfo.width} x {compressionInfo.height}
+                  尺寸: {compressionInfo.width} × {compressionInfo.height}px
                 </p>
               )}
-              <p className="text-sm text-gray-500">点击或拖拽更换图片</p>
+              <p className="text-sm text-gray-500">
+                ✓ 已准备好，使用压缩版本上传
+              </p>
+              <p className="text-sm text-gray-400 mt-2">点击或拖拽更换图片</p>
             </div>
           ) : !status ? (
             <div>
               <p className="text-lg font-medium text-gray-700">上传商品图片</p>
               <p className="mt-2 text-sm text-gray-500">
-                点击选择图片，或拖拽上传 (最大 10MB)
+                点击选择图片，或拖拽上传（最大 10MB，将自动压缩到 1MB 内）
               </p>
             </div>
           ) : null}
