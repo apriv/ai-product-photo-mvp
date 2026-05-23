@@ -189,6 +189,7 @@ export default function Home() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [accessLoading, setAccessLoading] = useState(false);
   const [accessError, setAccessError] = useState("");
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState("抠图主图");
@@ -274,6 +275,9 @@ export default function Home() {
     const selectedFile = acceptedFiles[0];
     setErrorMessage("");
     setCompressionInfo(null);
+    setOriginalFile(null);
+    setFile(null);
+    setImage(null);
 
     if (!selectedFile) return;
 
@@ -286,8 +290,9 @@ export default function Home() {
     try {
       setStatus("压缩中...");
       const result = await compressImage(selectedFile);
+      setOriginalFile(selectedFile);
       setFile(result.file);
-      setImage(URL.createObjectURL(result.file));
+      setImage(URL.createObjectURL(selectedFile));
       setCompressionInfo(result.info);
       setGeneratedImage(null);
       setStatus("");
@@ -298,7 +303,10 @@ export default function Home() {
   }, []);
 
   const handleGenerate = async () => {
-    if (!file) return;
+    const uploadFile =
+      selectedTemplate === "社媒海报" && originalFile ? originalFile : file;
+
+    if (!uploadFile) return;
 
     setLoading(true);
     setStatus("上传中...");
@@ -306,7 +314,7 @@ export default function Home() {
 
     try {
       const formData = new FormData();
-      formData.append("image", file);
+      formData.append("image", uploadFile);
       formData.append("template", selectedTemplate);
       formData.append(ACCESS_PASSWORD_FIELD, accessPassword);
 
@@ -445,6 +453,11 @@ export default function Home() {
               {compressionInfo && (
                 <p className="text-sm text-gray-500">
                   尺寸: {compressionInfo.width} x {compressionInfo.height}
+                </p>
+              )}
+              {selectedTemplate === "社媒海报" && originalFile && (
+                <p className="text-sm text-gray-500">
+                  社媒海报将使用原图: {formatFileSize(originalFile.size)}
                 </p>
               )}
               <p className="text-sm text-gray-500">点击或拖拽更换图片</p>

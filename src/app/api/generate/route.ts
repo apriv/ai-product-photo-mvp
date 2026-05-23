@@ -208,6 +208,8 @@ export async function POST(request: Request) {
           input: {
             image_urls: [uploadUrl],
             prompt: getPosterPrompt(),
+            output_format: "png",
+            resolution: "2k",
           },
         });
 
@@ -224,7 +226,7 @@ export async function POST(request: Request) {
           imageUrl: result.data.images[0].url,
         });
       } catch (modelError) {
-        logger.error("Flux-kontext model failed", {
+        logger.error("Poster model failed", {
           ...requestMeta,
           template,
           model: POSTER_MODEL,
