@@ -14,26 +14,11 @@ fal.config({
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const BIREFNET_MODEL = "fal-ai/birefnet";
-const FLUX_KONTEXT_MODEL = "fal-ai/flux-kontext/dev";
+const POSTER_MODEL = "xai/grok-imagine-image/edit";
 
 function getPosterPrompt() {
   return `
-Create a modern ecommerce social media poster using the uploaded product as the main subject.
-
-Keep the exact product shape, color, logo, material, and details unchanged.
-
-Add:
-- premium gradient background
-- soft studio lighting
-- realistic shadow
-- minimal abstract graphic elements
-- clean Instagram style composition
-- modern Xiaohongshu aesthetic
-- professional commercial poster feeling
-
-Do not add readable text, fake logos, watermarks, or extra products.
-
-The product must stay centered and realistic.
+Create a premium Instagram-style ecommerce poster using the uploaded product as the main subject. Keep the product completely realistic and unchanged, preserving the exact shape, colors, logo, material, and details. Use cinematic soft lighting, realistic shadows, elegant composition, and a visually rich luxury background with subtle gradients, reflections, textures, or studio elements instead of plain flat colors. Add minimal clean English advertising text related to the product, using short stylish phrases with correct spelling. Avoid clutter, fake logos, watermarks, distorted objects, oversaturated colors, or cheap AI-generated aesthetics. The final result should look like a real high-end commercial social media advertisement.
 `;
 }
 
@@ -217,11 +202,11 @@ export async function POST(request: Request) {
         logger.info("Starting AI model processing", {
           ...requestMeta,
           template,
-          model: FLUX_KONTEXT_MODEL,
+          model: POSTER_MODEL,
         });
-        const result = await fal.subscribe(FLUX_KONTEXT_MODEL, {
+        const result = await fal.subscribe(POSTER_MODEL, {
           input: {
-            image_url: uploadUrl,
+            image_urls: [uploadUrl],
             prompt: getPosterPrompt(),
           },
         });
@@ -229,7 +214,7 @@ export async function POST(request: Request) {
         logger.info("AI model completed successfully", {
           ...requestMeta,
           template,
-          model: FLUX_KONTEXT_MODEL,
+          model: POSTER_MODEL,
           modelDuration: `${Date.now() - modelStartTime}ms`,
           totalDuration: `${Date.now() - startTime}ms`,
         });
@@ -242,7 +227,7 @@ export async function POST(request: Request) {
         logger.error("Flux-kontext model failed", {
           ...requestMeta,
           template,
-          model: FLUX_KONTEXT_MODEL,
+          model: POSTER_MODEL,
           error:
             modelError instanceof Error ? modelError.message : String(modelError),
           stack: modelError instanceof Error ? modelError.stack : undefined,
