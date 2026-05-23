@@ -15,6 +15,8 @@ fal.config({
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const BIREFNET_MODEL = "fal-ai/birefnet";
 const POSTER_MODEL = "xai/grok-imagine-image/edit";
+// 版本号：使用构建时间戳
+const BUILD_VERSION = process.env.BUILD_VERSION || new Date().toISOString();
 
 function getPosterPrompt() {
   return `
@@ -131,6 +133,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
           success: true,
           imageUrl: placeholderUrl,
+          version: BUILD_VERSION,
         });
       } catch (error) {
         logger.error("Placeholder generation failed", {
@@ -187,6 +190,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
           success: true,
           imageUrl: result.data.image.url,
+          version: BUILD_VERSION,
         });
       } catch (modelError) {
         logger.error("Birefnet model failed", {
@@ -228,6 +232,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
           success: true,
           imageUrl: result.data.images[0].url,
+          version: BUILD_VERSION,
         });
       } catch (modelError) {
         logger.error("Poster model failed", {
@@ -269,6 +274,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
           success: true,
           imageUrl: result.data.images[0].url,
+          version: BUILD_VERSION,
         });
       } catch (modelError) {
         logger.error("Listing board model failed", {

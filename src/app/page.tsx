@@ -15,6 +15,22 @@ import { shouldUseOriginalUpload, templates } from "@/lib/templates";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
+// 调试日志工具
+const debug = {
+  log: (label: string, data?: unknown) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] [DEBUG] ${label}`, data || "");
+  },
+  error: (label: string, error?: unknown) => {
+    const timestamp = new Date().toISOString();
+    console.error(`[${timestamp}] [ERROR] ${label}`, error || "");
+  },
+  warn: (label: string, data?: unknown) => {
+    const timestamp = new Date().toISOString();
+    console.warn(`[${timestamp}] [WARN] ${label}`, data || "");
+  },
+};
+
 export default function Home() {
   const [accessPassword, setAccessPassword] = useState("");
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -30,15 +46,20 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [compressionInfo, setCompressionInfo] =
     useState<CompressionInfo | null>(null);
+  const [serverVersion, setServerVersion] = useState<string>("");
+  const [clientVersion] = useState<string>(new Date().getTime().toString());
 
   useEffect(() => {
     const frameId = window.requestAnimationFrame(() => {
+      debug.log("App initialized", { clientVersion });
+      
       const savedPassword = localStorage.getItem(ACCESS_PASSWORD_STORAGE_KEY);
       if (!savedPassword) {
         return;
       }
 
       setAccessPassword(savedPassword);
+      debug.log("Attempting auto-login with saved password");
 
       fetch("/api/access", {
         method: "POST",
@@ -51,19 +72,28 @@ export default function Home() {
       })
         .then(async (response) => {
           const data = await response.json();
+          debug.log("Access validation response", { status: response.status, success: data.success, version: data.version });
+          
+          if (data.version) {
+            setServerVersion(data.version);
+            debug.log("Server version detected", { serverVersion: data.version, clientVersion });
+          }
+          
           if (!response.ok || !data.success) {
             throw new Error(data.error || "访问密码错误");
           }
           setIsUnlocked(true);
+          debug.log("Auto-login successful");
         })
-        .catch(() => {
+        .catch((error) => {
+          debug.error("Auto-login failed", error);
           localStorage.removeItem(ACCESS_PASSWORD_STORAGE_KEY);
           setAccessPassword("");
         });
     });
 
     return () => window.cancelAnimationFrame(frameId);
-  }, []);
+  }, [clientVersion]);
 
   const handleUnlock = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -104,30 +134,56 @@ export default function Home() {
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
+    
+    debug.log("File drop/select", {
+      fileName: selectedFile?.name,
+      fileSize: selectedFile?.size,
+      fileSizeMB: selectedFile ? (selectedFile.size / 1024 / 1024).toFixed(2) : "N/A",
+      mimeType: selectedFile?.type,
+    });
+
     setErrorMessage("");
     setCompressionInfo(null);
     setOriginalFile(null);
     setFile(null);
     setImage(null);
 
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      debug.warn("No file selected");
+      return;
+    }
 
     // 检查文件大小
     if (selectedFile.size > MAX_FILE_SIZE) {
-      setErrorMessage(`图片过大（${(selectedFile.size / 1024 / 1024).toFixed(1)}MB），限制 10MB`);
+      const errorMsg = `图片过大（${(selectedFile.size / 1024 / 1024).toFixed(1)}MB），限制 10MB`;
+      debug.warn("File too large", { fileSize: selectedFile.size, maxSize: MAX_FILE_SIZE });
+      setErrorMessage(errorMsg);
       return;
     }
 
     try {
       setStatus("压缩中...");
       const result = await compressImage(selectedFile);
+      
+      debug.log("Image compression completed", {
+        originalSize: result.info.originalSize,
+        compressedSize: result.info.compressedSize,
+        width: result.info.width,
+        height: result.info.height,
+        wasCompressed: result.info.wasCompressed,
+        ratio: result.info.wasCompressed 
+          ? ((1 - result.info.compressedSize / result.info.originalSize) * 100).toFixed(1) + "%"
+          : "no compression",
+      });
+
       setOriginalFile(selectedFile);
       setFile(result.file);
       setImage(URL.createObjectURL(selectedFile));
       setCompressionInfo(result.info);
       setGeneratedImage(null);
       setStatus("");
-    } catch {
+    } catch (error) {
+      debug.error("Image compression failed", error);
       setErrorMessage("图片处理失败，请尝试其他图片");
       setStatus("");
     }
@@ -139,7 +195,19 @@ export default function Home() {
         ? originalFile
         : file;
 
-    if (!uploadFile) return;
+    if (!uploadFile) {
+      debug.warn("No file selected for upload");
+      return;
+    }
+
+    debug.log("Generate request started", {
+      template: selectedTemplate,
+      fileName: uploadFile.name,
+      fileSize: uploadFile.size,
+      fileSizeMB: (uploadFile.size / 1024 / 1024).toFixed(2),
+      isOriginal: shouldUseOriginalUpload(selectedTemplate) && !!originalFile,
+      mimeType: uploadFile.type,
+    });
 
     setLoading(true);
     setStatus("上传中...");
@@ -151,8 +219,15 @@ export default function Home() {
       formData.append("template", selectedTemplate);
       formData.append(ACCESS_PASSWORD_FIELD, accessPassword);
 
+      debug.log("FormData prepared", {
+        hasImage: formData.has("image"),
+        hasTemplate: formData.has("template"),
+        hasPassword: formData.has(ACCESS_PASSWORD_FIELD),
+      });
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分钟超时
+      const requestStartTime = Date.now();
 
       const response = await fetch("/api/generate", {
         method: "POST",
@@ -161,25 +236,76 @@ export default function Home() {
       });
 
       clearTimeout(timeoutId);
+      const requestDuration = Date.now() - requestStartTime;
+
+      debug.log("Generate response received", {
+        status: response.status,
+        statusText: response.statusText,
+        durationMs: requestDuration,
+        headers: {
+          contentType: response.headers.get("content-type"),
+        },
+      });
 
       setStatus("生成中...");
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+        debug.log("Response JSON parsed", { success: data.success, hasImageUrl: !!data.imageUrl, version: data.version });
+      } catch (parseError) {
+        debug.error("Failed to parse response JSON", parseError);
+        throw new Error("服务器响应格式错误");
+      }
+
+      // 版本检查：如果服务器版本与客户端版本不同，刷新页面
+      if (data.version && data.version !== serverVersion && serverVersion) {
+        debug.warn("Server version mismatch, reloading page", {
+          oldVersion: serverVersion,
+          newVersion: data.version,
+        });
+        setServerVersion(data.version);
+        // 等待1秒再刷新，让用户看到提示
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+        throw new Error("检测到新版本，正在重新加载...");
+      }
+
+      if (data.version) {
+        setServerVersion(data.version);
+      }
 
       if (response.status === 401) {
+        debug.warn("Unauthorized response, clearing session");
         localStorage.removeItem(ACCESS_PASSWORD_STORAGE_KEY);
         setIsUnlocked(false);
         setAccessPassword("");
       }
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || "生成失败，请重试");
+        const errorMsg = data.error || "生成失败，请重试";
+        debug.error("Generate API returned error", {
+          status: response.status,
+          error: errorMsg,
+          data,
+        });
+        throw new Error(errorMsg);
       }
+
+      debug.log("Generate successful", {
+        imageUrl: data.imageUrl ? "received" : "missing",
+        totalDuration: requestDuration,
+      });
 
       setGeneratedImage(data.imageUrl);
       setStatus("");
     } catch (error) {
-      console.error(error);
+      debug.error("Generate request failed", {
+        error: error instanceof Error ? error.message : String(error),
+        errorName: error instanceof Error ? error.name : "unknown",
+        template: selectedTemplate,
+      });
       const errorMsg =
         error instanceof Error ? error.message : "生成失败，请重试";
       setErrorMessage(errorMsg);

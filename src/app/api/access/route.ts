@@ -4,6 +4,9 @@ import { ACCESS_PASSWORD_FIELD } from "@/lib/access-shared";
 import logger from "@/lib/logger";
 import { createRequestId, getRequestMeta } from "@/lib/request-meta";
 
+// 版本号：使用构建时间戳
+const BUILD_VERSION = process.env.BUILD_VERSION || new Date().toISOString();
+
 export async function POST(request: Request) {
   const requestId = createRequestId();
   const requestMeta = getRequestMeta(request, requestId);
@@ -26,13 +29,17 @@ export async function POST(request: Request) {
         {
           success: false,
           error: access.error,
+          version: BUILD_VERSION,
         },
         { status: access.status }
       );
     }
 
     logger.info("Access password accepted", requestMeta);
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      version: BUILD_VERSION,
+    });
   } catch (error) {
     logger.error("Access check failed", {
       ...requestMeta,
@@ -43,6 +50,7 @@ export async function POST(request: Request) {
       {
         success: false,
         error: "访问校验失败",
+        version: BUILD_VERSION,
       },
       { status: 500 }
     );
