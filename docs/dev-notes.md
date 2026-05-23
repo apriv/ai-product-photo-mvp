@@ -129,23 +129,26 @@ db 文件本身不进 git，服务器自己持有数据。
 数据库这一版还没接前端，部署后**整站功能不变**，只是把数据表建好。在服务器项目根目录执行：
 
 ```bash
-# 1. 拉新代码并装依赖（postinstall 会自动跑 prisma generate）
+# 1. 拉新代码
 git pull
-npm install
 
-# 2. 在 .env.local 里追加 DATABASE_URL（如果还没加过）
+# 2. 在 .env.local 里追加 DATABASE_URL（必须在 npm install 之前！
+#    postinstall 会跑 prisma generate，generate 需要 DATABASE_URL）
 echo 'DATABASE_URL="file:./prisma/dev.db"' >> .env.local
 
-# 3. 建表
+# 3. 装依赖（postinstall 自动跑 prisma generate）
+npm install
+
+# 4. 建表
 npx prisma migrate deploy
 
-# 4. 插入基础套餐（幂等，重复跑没事）
+# 5. 插入基础套餐（幂等，重复跑没事）
 npm run db:seed
 
-# 5. 创建第一个 admin（用强一点的密码！）
-npx tsx scripts/create-admin.ts --username admin --password '<强密码>'
+# 6. 创建第一个 admin（用强一点的密码！）
+npx tsx scripts/create-admin.ts --username admin --password '<强密码>' Flzx
 
-# 6. 构建并重启
+# 7. 构建并重启
 npm run build
 pm2 restart ai-product-photo
 ```
@@ -155,3 +158,39 @@ pm2 restart ai-product-photo
 - `ls -la prisma/dev.db` 看到非空文件
 - `npm run db:studio` 浏览器打开能看到 Plan 有 2 条、User 有 1 条
 
+
+
+---
+# 服务器部署：登录/注册/激活（Step 2）
+
+这一版**会改变用户访问方式**：旧的 `APP_PASSWORD` 密码访问被替换为账号系统。
+已经有的 admin 账号仍然可用（数据没动），但浏览器侧的"输入密码进入"会变成"登录页"。
+
+```bash
+# 1. 拉新代码
+git pull
+
+# 2. 装依赖（这一步会跑 prisma generate，需要 .env.local 里有 DATABASE_URL）
+npm install
+
+# 3. 这一版没有新的数据库迁移，但保险起见跑一下
+npx prisma migrate deploy
+
+# 4. 给自己/测试用户生成几个激活码（拿来注册）
+npm run generate-codes -- --plan STD --count 5 --note "step-2-onboard"
+# 输出会列出 5 个 STD-XXXXXXXXXXXX 码，记下来
+
+# 5. 构建并重启
+npm run build
+pm2 restart ai-product-photo
+```
+
+部署完后第一次使用：
+1. 浏览器打开站点，会自动跳转 `/login`
+2. 用 admin 账号直接登录，或者点"用激活码注册"用上面生成的码注册新账号
+3. 在 `/account` 页可以看到余额（admin 默认 0 积分，要的话自己用一个 STD 码激活，或者再写脚本调整）
+
+可选：清理废弃的 env 变量
+```bash
+# .env.local 里的 APP_PASSWORD 这一行可以删了，已经没人用它了
+```

@@ -19,7 +19,12 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="mx-auto max-w-3xl">
-        <h1 className="text-3xl font-bold text-gray-900">电商 AI 助手</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">电商 AI 助手</h1>
+          <Link href="/account" className="text-sm text-gray-500 hover:text-black">
+            账户 →
+          </Link>
+        </div>
         <p className="mt-3 text-gray-600">选择一个功能开始。</p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">

@@ -12,7 +12,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "create-admin": "tsx scripts/create-admin.ts"
+    "create-admin": "tsx scripts/create-admin.ts",
+    "generate-codes": "tsx scripts/generate-codes.ts"
   },
   "dependencies": {
     "@fal-ai/client": "^1.10.1",

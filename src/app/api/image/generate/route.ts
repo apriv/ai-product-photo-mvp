@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { fal } from "@/lib/fal-client";
-import {
-  getAccessPassword,
-  validateAccessPassword,
-} from "@/lib/access-control";
+import { AuthError, requireUser } from "@/lib/auth";
 import logger from "@/lib/logger";
 import { createRequestId, getRequestMeta } from "@/lib/request-meta";
 import { getImageTemplate } from "@/features/image/templates";
@@ -40,26 +37,19 @@ export async function POST(request: Request) {
   let fileSizeMB = "";
 
   try {
+    const user = await requireUser();
     const formData = await request.formData();
-    const access = validateAccessPassword(getAccessPassword(formData));
-
-    if (!access.ok) {
-      logger.warn("Generate request rejected by access control", {
-        ...requestMeta,
-        status: access.status,
-      });
-      return NextResponse.json(
-        { success: false, error: access.error },
-        { status: access.status }
-      );
-    }
 
     const image = formData.get("image");
     templateName = String(formData.get("template") || "社媒海报");
     const template = getImageTemplate(templateName);
 
     if (!template) {
-      logger.warn("Unknown template", { ...requestMeta, template: templateName });
+      logger.warn("Unknown template", {
+        ...requestMeta,
+        userId: user.id,
+        template: templateName,
+      });
       return NextResponse.json(
         { success: false, error: "未知模板" },
         { status: 400 }
@@ -231,19 +221,21 @@ export async function POST(request: Request) {
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : "未知错误";
     const errorStack = error instanceof Error ? error.stack : undefined;
+    const status = error instanceof AuthError ? error.status : 500;
 
     logger.error("API error", {
       ...requestMeta,
       template: templateName,
       fileSizeMB,
       duration: `${duration}ms`,
+      status,
       error: errorMessage,
       stack: errorStack,
     });
 
     return NextResponse.json(
       { success: false, error: errorMessage || "生成失败，请重试" },
-      { status: 500 }
+      { status }
     );
   }
 }

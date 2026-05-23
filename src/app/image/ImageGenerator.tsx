@@ -3,8 +3,7 @@
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import Link from "next/link";
-import { useAccess } from "@/components/AccessGate";
-import { ACCESS_PASSWORD_FIELD } from "@/lib/access-shared";
+import { useRouter } from "next/navigation";
 import {
   compressImage,
   CompressionInfo,
@@ -27,7 +26,7 @@ const debug = {
 };
 
 export default function ImageGenerator() {
-  const { accessPassword, resetAccess } = useAccess();
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState("社媒海报");
@@ -83,7 +82,6 @@ export default function ImageGenerator() {
       const formData = new FormData();
       formData.append("image", file);
       formData.append("template", selectedTemplate);
-      formData.append(ACCESS_PASSWORD_FIELD, accessPassword);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 180000);
@@ -107,7 +105,8 @@ export default function ImageGenerator() {
       }
 
       if (response.status === 401) {
-        resetAccess();
+        router.replace("/login");
+        return;
       }
 
       if (!response.ok || !data.success) {

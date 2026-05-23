@@ -17,7 +17,12 @@
 
 ### 访问控制
 
-整站密码保护，密码存 `.env.local` 的 `APP_PASSWORD`。前端在 root layout 拦截，登录后写 localStorage 持久化。
+用户系统 + cookie session：
+- 必须注册（用户名 + 密码 + **激活码**）后才能登录
+- Session 用 HttpOnly cookie，30 天有效
+- 路由保护用 `src/proxy.ts`（Next 16 的 proxy/中间件）：仅检查 cookie 是否存在，真正鉴权在 route handler 里 `requireUser()`
+- 激活码来自外部售卖渠道；通过 `npm run generate-codes -- --plan <ID> --count N` 生成
+- 详细设计见 [`user-management.md`](./user-management.md)
 
 ### 视频生成（`/video`）
 
@@ -38,43 +43,46 @@
 
 ```
 src/
+├── proxy.ts                        # Next 16 路由保护（未登录 → /login）
 ├── app/
-│   ├── layout.tsx                  # 注入 <AccessGate>
+│   ├── layout.tsx                  # root layout
 │   ├── page.tsx                    # 首页：功能导航
+│   ├── login/                      # 登录页（公开）
+│   ├── register/                   # 注册页（公开，需激活码）
+│   ├── account/                    # 账户页：余额 / 激活 / 流水
 │   ├── image/
 │   │   ├── page.tsx                # /image 路由入口
 │   │   └── ImageGenerator.tsx      # 客户端组件，承载所有交互
 │   ├── video/page.tsx              # 视频功能占位
 │   └── api/
-│       ├── access/route.ts         # POST /api/access — 校验密码
+│       ├── auth/{login,logout,register}/route.ts
+│       ├── account/{wallet,activate}/route.ts
 │       └── image/generate/route.ts # POST /api/image/generate — 图片生成
 │
 ├── features/                       # 按业务功能拆分的领域配置
 │   ├── image/templates.ts          # 图片模板单一数据源：name + kind + model + prompt
 │   └── video/templates.ts          # 视频模板占位
 │
-├── components/
-│   └── AccessGate.tsx              # 密码 gate 组件 + useAccess() hook
-│
 ├── generated/prisma/               # 自动生成，gitignore，prisma generate 产出
 │
 └── lib/                            # 跨功能共享工具
+    ├── auth.ts                     # session + bcrypt + requireUser / requireAdmin
+    ├── activation.ts               # 激活码消费 + wallet 更新（事务）
     ├── fal-client.ts               # fal.config() 统一入口
     ├── prisma.ts                   # PrismaClient 单例（server-only）
-    ├── access-control.ts           # 服务端密码校验
-    ├── access-shared.ts            # 客户端/服务端共享常量
     ├── image-compression.ts        # 浏览器端图片压缩（压到 1MB 内）
     ├── logger.ts                   # winston 实例
     └── request-meta.ts             # 请求 ID + 客户端 IP 提取
 
 prisma/
-├── schema.prisma                   # 数据模型（9 张表）
+├── schema.prisma                   # 数据模型（7 张表）
 ├── migrations/                     # 历史迁移，受 git 管理
 ├── seed.ts                         # 插入基础套餐（STD / TOPUP-100）
 └── dev.db                          # SQLite 文件，gitignore
 
 scripts/
-└── create-admin.ts                 # 命令行创建管理员账号
+├── create-admin.ts                 # 创建管理员账号
+└── generate-codes.ts               # 批量生成激活码
 
 prisma.config.ts                    # Prisma 7 配置（DATABASE_URL 来源）
 ```
@@ -82,18 +90,19 @@ prisma.config.ts                    # Prisma 7 配置（DATABASE_URL 来源）
 ## 关键约定
 
 - **新增图片模板** = 只改 `src/features/image/templates.ts`。API route 按 `kind`（`fal-poster` / `fal-birefnet` / `placeholder`）dispatch，不用动 route 文件。
-- **新增页面** = 在 `src/app/<name>/page.tsx` 加路由，密码 gate 已在 root layout，自动生效。
-- **客户端拿密码** = `useAccess()` hook，避免重复实现登录态。
+- **新增页面** = 在 `src/app/<name>/page.tsx` 加路由，proxy 自动要求登录。如果是公开页面，需要在 `src/proxy.ts` 的 `PUBLIC_PATHS` 加白名单。
+- **服务端拿用户** = `requireUser()` / `requireAdmin()`，throw `AuthError` 时 catch 块自动转 HTTP 状态码。
 
 ## 环境变量（`.env.local`）
 
 ```
-APP_PASSWORD=...                  # 整站访问密码（临时，用户系统上线后废弃）
 FAL_KEY=...                       # fal.ai API key
 LOG_LEVEL=info                    # 可选，默认 info
 LOG_DIR=./logs                    # 可选，winston 文件日志目录
 DATABASE_URL="file:./prisma/dev.db"   # SQLite 路径（相对项目根 cwd）
 ```
+
+`APP_PASSWORD` 已废弃，可以从生产 env 中删除。
 
 ## 本地运行
 
