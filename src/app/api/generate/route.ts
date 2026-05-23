@@ -6,12 +6,15 @@ import {
   validateAccessPassword,
 } from "@/lib/access-control";
 import logger from "@/lib/logger";
+import { createRequestId, getRequestMeta } from "@/lib/request-meta";
 
 fal.config({
   credentials: process.env.FAL_KEY,
 });
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const BIREFNET_MODEL = "fal-ai/birefnet";
+const FLUX_KONTEXT_MODEL = "fal-ai/flux-kontext/dev";
 
 function getPosterPrompt() {
   return `
@@ -58,6 +61,8 @@ async function generatePlaceholder(): Promise<string> {
 
 export async function POST(request: Request) {
   const startTime = Date.now();
+  const requestId = createRequestId();
+  const requestMeta = getRequestMeta(request, requestId);
   let template = "";
   let fileSizeMB = "";
 
@@ -67,6 +72,7 @@ export async function POST(request: Request) {
 
     if (!access.ok) {
       logger.warn("Generate request rejected by access control", {
+        ...requestMeta,
         status: access.status,
       });
       return NextResponse.json(
@@ -82,7 +88,7 @@ export async function POST(request: Request) {
     template = String(formData.get("template") || "抠图主图");
 
     if (!image || !(image instanceof File)) {
-      logger.warn("No image file received", { template });
+      logger.warn("No image file received", { ...requestMeta, template });
       return NextResponse.json(
         {
           success: false,
@@ -97,6 +103,7 @@ export async function POST(request: Request) {
     // 文件大小检查
     if (image.size > MAX_FILE_SIZE) {
       logger.warn("File size exceeds limit", {
+        ...requestMeta,
         template,
         fileName: image.name,
         fileSize: fileSizeMB,
@@ -112,6 +119,7 @@ export async function POST(request: Request) {
     }
 
     logger.info("Image processing started", {
+      ...requestMeta,
       template,
       fileName: image.name,
       fileSize: fileSizeMB,
@@ -121,9 +129,10 @@ export async function POST(request: Request) {
     // 白底主图 - 测试 Placeholder (不调用 API)
     if (template === "白底主图") {
       try {
-        logger.info("Generating placeholder image", { template });
+        logger.info("Generating placeholder image", { ...requestMeta, template });
         const placeholderUrl = await generatePlaceholder();
         logger.info("Placeholder generated successfully", {
+          ...requestMeta,
           template,
           duration: `${Date.now() - startTime}ms`,
         });
@@ -134,6 +143,7 @@ export async function POST(request: Request) {
         });
       } catch (error) {
         logger.error("Placeholder generation failed", {
+          ...requestMeta,
           template,
           error: error instanceof Error ? error.message : String(error),
         });
@@ -143,13 +153,16 @@ export async function POST(request: Request) {
 
     let uploadUrl: string;
     try {
+      const uploadStartTime = Date.now();
       uploadUrl = await fal.storage.upload(image);
       logger.info("Image uploaded to FAL storage", {
+        ...requestMeta,
         template,
-        uploadUrl: uploadUrl.substring(0, 50) + "...",
+        duration: `${Date.now() - uploadStartTime}ms`,
       });
     } catch (uploadError) {
       logger.error("FAL storage upload failed", {
+        ...requestMeta,
         template,
         error:
           uploadError instanceof Error ? uploadError.message : String(uploadError),
@@ -160,16 +173,24 @@ export async function POST(request: Request) {
     // 抠图
     if (template === "抠图主图") {
       try {
-        logger.info("Starting birefnet processing", { template });
-        const result = await fal.subscribe("fal-ai/birefnet", {
+        const modelStartTime = Date.now();
+        logger.info("Starting AI model processing", {
+          ...requestMeta,
+          template,
+          model: BIREFNET_MODEL,
+        });
+        const result = await fal.subscribe(BIREFNET_MODEL, {
           input: {
             image_url: uploadUrl,
           },
         });
 
-        logger.info("Birefnet completed successfully", {
+        logger.info("AI model completed successfully", {
+          ...requestMeta,
           template,
-          duration: `${Date.now() - startTime}ms`,
+          model: BIREFNET_MODEL,
+          modelDuration: `${Date.now() - modelStartTime}ms`,
+          totalDuration: `${Date.now() - startTime}ms`,
         });
 
         return NextResponse.json({
@@ -178,7 +199,9 @@ export async function POST(request: Request) {
         });
       } catch (modelError) {
         logger.error("Birefnet model failed", {
+          ...requestMeta,
           template,
+          model: BIREFNET_MODEL,
           error:
             modelError instanceof Error ? modelError.message : String(modelError),
           stack: modelError instanceof Error ? modelError.stack : undefined,
@@ -190,17 +213,25 @@ export async function POST(request: Request) {
     // 社媒海报
     if (template === "社媒海报") {
       try {
-        logger.info("Starting flux-kontext processing", { template });
-        const result = await fal.subscribe("fal-ai/flux-kontext/dev", {
+        const modelStartTime = Date.now();
+        logger.info("Starting AI model processing", {
+          ...requestMeta,
+          template,
+          model: FLUX_KONTEXT_MODEL,
+        });
+        const result = await fal.subscribe(FLUX_KONTEXT_MODEL, {
           input: {
             image_url: uploadUrl,
             prompt: getPosterPrompt(),
           },
         });
 
-        logger.info("Flux-kontext completed successfully", {
+        logger.info("AI model completed successfully", {
+          ...requestMeta,
           template,
-          duration: `${Date.now() - startTime}ms`,
+          model: FLUX_KONTEXT_MODEL,
+          modelDuration: `${Date.now() - modelStartTime}ms`,
+          totalDuration: `${Date.now() - startTime}ms`,
         });
 
         return NextResponse.json({
@@ -209,7 +240,9 @@ export async function POST(request: Request) {
         });
       } catch (modelError) {
         logger.error("Flux-kontext model failed", {
+          ...requestMeta,
           template,
+          model: FLUX_KONTEXT_MODEL,
           error:
             modelError instanceof Error ? modelError.message : String(modelError),
           stack: modelError instanceof Error ? modelError.stack : undefined,
@@ -218,7 +251,7 @@ export async function POST(request: Request) {
       }
     }
 
-    logger.warn("Unknown template", { template });
+    logger.warn("Unknown template", { ...requestMeta, template });
     return NextResponse.json(
       {
         success: false,
@@ -234,6 +267,7 @@ export async function POST(request: Request) {
       error instanceof Error ? error.stack : undefined;
 
     logger.error("API error", {
+      ...requestMeta,
       template,
       fileSizeMB,
       duration: `${duration}ms`,

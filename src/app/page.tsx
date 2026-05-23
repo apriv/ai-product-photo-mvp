@@ -32,59 +32,156 @@ const templates = [
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const TARGET_SIZE = 2 * 1024 * 1024; // 2MB target after compression
+const MAX_IMAGE_EDGE = 2048;
+const MIN_JPEG_QUALITY = 0.55;
+const INITIAL_JPEG_QUALITY = 0.9;
+const QUALITY_STEP = 0.08;
 
-async function compressImage(file: File): Promise<File> {
+type CompressionInfo = {
+  originalSize: number;
+  compressedSize: number;
+  width: number;
+  height: number;
+  wasCompressed: boolean;
+};
+
+type CompressionResult = {
+  file: File;
+  info: CompressionInfo;
+};
+
+function formatFileSize(bytes: number) {
+  return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+}
+
+function getJpegFileName(fileName: string) {
+  const baseName = fileName.replace(/\.[^.]+$/, "");
+  return `${baseName || "image"}.jpg`;
+}
+
+function loadImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("图片读取失败"));
+    reader.onload = (event) => {
+      const image = new Image();
+      image.onerror = () => reject(new Error("图片加载失败"));
+      image.onload = () => resolve(image);
+      image.src = String(event.target?.result || "");
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function calculateSize(width: number, height: number, maxEdge: number) {
+  const scale = Math.min(1, maxEdge / Math.max(width, height));
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
+}
+
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  quality: number
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("图片压缩失败"));
+          return;
+        }
+        resolve(blob);
+      },
+      "image/jpeg",
+      quality
+    );
+  });
+}
+
+async function compressImage(file: File): Promise<CompressionResult> {
   if (file.size <= TARGET_SIZE) {
-    return file;
+    const image = await loadImage(file);
+    return {
+      file,
+      info: {
+        originalSize: file.size,
+        compressedSize: file.size,
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+        wasCompressed: false,
+      },
+    };
   }
 
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
+  const image = await loadImage(file);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
 
-        // 计算缩放尺寸
-        const maxWidth = 2048;
-        const maxHeight = 2048;
-        if (width > height) {
-          if (width > maxWidth) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
-          }
-        } else {
-          if (height > maxHeight) {
-            width = Math.round((width * maxHeight) / height);
-            height = maxHeight;
-          }
-        }
+  if (!ctx) {
+    throw new Error("浏览器不支持图片压缩");
+  }
 
-        canvas.width = width;
-        canvas.height = height;
+  let maxEdge = MAX_IMAGE_EDGE;
+  let bestBlob: Blob | null = null;
+  let finalWidth = image.naturalWidth;
+  let finalHeight = image.naturalHeight;
 
-        const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0, width, height);
+  for (let resizeRound = 0; resizeRound < 4; resizeRound += 1) {
+    const size = calculateSize(image.naturalWidth, image.naturalHeight, maxEdge);
+    canvas.width = size.width;
+    canvas.height = size.height;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, size.width, size.height);
+    ctx.drawImage(image, 0, 0, size.width, size.height);
 
-        // 压缩质量直到达到目标大小
-        const quality = 0.9;
-        canvas.toBlob(
-          (blob) => {
-            const compressed = new File([blob!], file.name, {
-              type: "image/jpeg",
-            });
-            resolve(compressed);
+    finalWidth = size.width;
+    finalHeight = size.height;
+
+    for (
+      let quality = INITIAL_JPEG_QUALITY;
+      quality >= MIN_JPEG_QUALITY;
+      quality -= QUALITY_STEP
+    ) {
+      const blob = await canvasToBlob(canvas, Number(quality.toFixed(2)));
+      bestBlob = blob;
+
+      if (blob.size <= TARGET_SIZE) {
+        return {
+          file: new File([blob], getJpegFileName(file.name), {
+            type: "image/jpeg",
+          }),
+          info: {
+            originalSize: file.size,
+            compressedSize: blob.size,
+            width: finalWidth,
+            height: finalHeight,
+            wasCompressed: true,
           },
-          "image/jpeg",
-          quality
-        );
-      };
-    };
-  });
+        };
+      }
+    }
+
+    maxEdge = Math.round(maxEdge * 0.85);
+  }
+
+  if (!bestBlob) {
+    throw new Error("图片压缩失败");
+  }
+
+  return {
+    file: new File([bestBlob], getJpegFileName(file.name), {
+      type: "image/jpeg",
+    }),
+    info: {
+      originalSize: file.size,
+      compressedSize: bestBlob.size,
+      width: finalWidth,
+      height: finalHeight,
+      wasCompressed: true,
+    },
+  };
 }
 
 export default function Home() {
@@ -99,6 +196,8 @@ export default function Home() {
   const [status, setStatus] = useState<string>("");
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [compressionInfo, setCompressionInfo] =
+    useState<CompressionInfo | null>(null);
 
   useEffect(() => {
     const frameId = window.requestAnimationFrame(() => {
@@ -174,6 +273,7 @@ export default function Home() {
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
     setErrorMessage("");
+    setCompressionInfo(null);
 
     if (!selectedFile) return;
 
@@ -185,9 +285,10 @@ export default function Home() {
 
     try {
       setStatus("压缩中...");
-      const compressedFile = await compressImage(selectedFile);
-      setFile(compressedFile);
-      setImage(URL.createObjectURL(compressedFile));
+      const result = await compressImage(selectedFile);
+      setFile(result.file);
+      setImage(URL.createObjectURL(result.file));
+      setCompressionInfo(result.info);
       setGeneratedImage(null);
       setStatus("");
     } catch {
@@ -335,8 +436,17 @@ export default function Home() {
                 className="mx-auto max-h-80 rounded-xl"
               />
               <p className="mt-4 text-sm text-gray-500">
-                {file && `大小: ${(file.size / 1024 / 1024).toFixed(1)}MB`}
+                {compressionInfo?.wasCompressed
+                  ? `已压缩: ${formatFileSize(
+                      compressionInfo.originalSize
+                    )} -> ${formatFileSize(compressionInfo.compressedSize)}`
+                  : file && `大小: ${formatFileSize(file.size)}`}
               </p>
+              {compressionInfo && (
+                <p className="text-sm text-gray-500">
+                  尺寸: {compressionInfo.width} x {compressionInfo.height}
+                </p>
+              )}
               <p className="text-sm text-gray-500">点击或拖拽更换图片</p>
             </div>
           ) : !status ? (
