@@ -32,7 +32,7 @@ const templates = [
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const TARGET_SIZE = 2 * 1024 * 1024; // 2MB target after compression
-const MAX_IMAGE_EDGE = 2048;
+const MAX_IMAGE_EDGE = 4096;
 const MIN_JPEG_QUALITY = 0.55;
 const INITIAL_JPEG_QUALITY = 0.9;
 const QUALITY_STEP = 0.08;
@@ -123,47 +123,43 @@ async function compressImage(file: File): Promise<CompressionResult> {
     throw new Error("浏览器不支持图片压缩");
   }
 
-  let maxEdge = MAX_IMAGE_EDGE;
   let bestBlob: Blob | null = null;
-  let finalWidth = image.naturalWidth;
-  let finalHeight = image.naturalHeight;
+  const size = calculateSize(
+    image.naturalWidth,
+    image.naturalHeight,
+    MAX_IMAGE_EDGE
+  );
+  const finalWidth = size.width;
+  const finalHeight = size.height;
 
-  for (let resizeRound = 0; resizeRound < 4; resizeRound += 1) {
-    const size = calculateSize(image.naturalWidth, image.naturalHeight, maxEdge);
-    canvas.width = size.width;
-    canvas.height = size.height;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, size.width, size.height);
-    ctx.drawImage(image, 0, 0, size.width, size.height);
+  canvas.width = finalWidth;
+  canvas.height = finalHeight;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, finalWidth, finalHeight);
+  ctx.drawImage(image, 0, 0, finalWidth, finalHeight);
 
-    finalWidth = size.width;
-    finalHeight = size.height;
+  for (
+    let quality = INITIAL_JPEG_QUALITY;
+    quality >= MIN_JPEG_QUALITY;
+    quality -= QUALITY_STEP
+  ) {
+    const blob = await canvasToBlob(canvas, Number(quality.toFixed(2)));
+    bestBlob = blob;
 
-    for (
-      let quality = INITIAL_JPEG_QUALITY;
-      quality >= MIN_JPEG_QUALITY;
-      quality -= QUALITY_STEP
-    ) {
-      const blob = await canvasToBlob(canvas, Number(quality.toFixed(2)));
-      bestBlob = blob;
-
-      if (blob.size <= TARGET_SIZE) {
-        return {
-          file: new File([blob], getJpegFileName(file.name), {
-            type: "image/jpeg",
-          }),
-          info: {
-            originalSize: file.size,
-            compressedSize: blob.size,
-            width: finalWidth,
-            height: finalHeight,
-            wasCompressed: true,
-          },
-        };
-      }
+    if (blob.size <= TARGET_SIZE) {
+      return {
+        file: new File([blob], getJpegFileName(file.name), {
+          type: "image/jpeg",
+        }),
+        info: {
+          originalSize: file.size,
+          compressedSize: blob.size,
+          width: finalWidth,
+          height: finalHeight,
+          wasCompressed: true,
+        },
+      };
     }
-
-    maxEdge = Math.round(maxEdge * 0.85);
   }
 
   if (!bestBlob) {

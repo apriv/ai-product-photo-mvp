@@ -208,8 +208,6 @@ export async function POST(request: Request) {
           input: {
             image_urls: [uploadUrl],
             prompt: getPosterPrompt(),
-            output_format: "png",
-            resolution: "2k",
           },
         });
 
