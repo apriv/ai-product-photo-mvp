@@ -22,6 +22,12 @@ Create a premium Instagram-style ecommerce poster using the uploaded product as 
 `;
 }
 
+function getListingBoardPrompt() {
+  return `
+Create a professional ecommerce listing board on a pure white background using the uploaded product. Place the main hero product image large in the center, surrounded by smaller multi-angle views and close-up detail shots showing texture, materials, buttons, packaging, or important features. Keep the product completely consistent and realistic across all images, preserving the exact shape, colors, logo, proportions, and details. Arrange the images in a clean balanced commercial layout with soft shadows, proper spacing, and premium studio lighting. The final result should look like a professionally designed Amazon or Shopify product listing preview board.
+`;
+}
+
 async function generatePlaceholder(): Promise<string> {
   // 生成一个 800x800 的白色背景 placeholder 图片，中间有文字
   const svg = `
@@ -111,8 +117,8 @@ export async function POST(request: Request) {
       mimeType: image.type,
     });
 
-    // 白底主图 - 测试 Placeholder (不调用 API)
-    if (template === "白底主图") {
+    // 占位预览 - 测试 Placeholder (不调用 API)
+    if (template === "占位预览") {
       try {
         logger.info("Generating placeholder image", { ...requestMeta, template });
         const placeholderUrl = await generatePlaceholder();
@@ -225,6 +231,47 @@ export async function POST(request: Request) {
         });
       } catch (modelError) {
         logger.error("Poster model failed", {
+          ...requestMeta,
+          template,
+          model: POSTER_MODEL,
+          error:
+            modelError instanceof Error ? modelError.message : String(modelError),
+          stack: modelError instanceof Error ? modelError.stack : undefined,
+        });
+        throw new Error("AI 模型处理超时，请重试");
+      }
+    }
+
+    // 白底商品展示图
+    if (template === "白底商品展示图") {
+      try {
+        const modelStartTime = Date.now();
+        logger.info("Starting AI model processing", {
+          ...requestMeta,
+          template,
+          model: POSTER_MODEL,
+        });
+        const result = await fal.subscribe(POSTER_MODEL, {
+          input: {
+            image_urls: [uploadUrl],
+            prompt: getListingBoardPrompt(),
+          },
+        });
+
+        logger.info("AI model completed successfully", {
+          ...requestMeta,
+          template,
+          model: POSTER_MODEL,
+          modelDuration: `${Date.now() - modelStartTime}ms`,
+          totalDuration: `${Date.now() - startTime}ms`,
+        });
+
+        return NextResponse.json({
+          success: true,
+          imageUrl: result.data.images[0].url,
+        });
+      } catch (modelError) {
+        logger.error("Listing board model failed", {
           ...requestMeta,
           template,
           model: POSTER_MODEL,
