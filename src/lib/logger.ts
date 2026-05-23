@@ -1,7 +1,32 @@
 import winston from "winston";
+import fs from "fs";
 import path from "path";
 
-const logDir = process.env.LOG_DIR || "/var/log";
+const logDir = process.env.LOG_DIR || path.join(process.cwd(), "logs");
+const transports: winston.transport[] = [
+  new winston.transports.Console({
+    format: winston.format.combine(
+      winston.format.colorize(),
+      winston.format.simple()
+    ),
+  }),
+];
+
+try {
+  fs.mkdirSync(logDir, { recursive: true });
+
+  transports.push(
+    new winston.transports.File({
+      filename: path.join(logDir, "ai-product-photo-error.log"),
+      level: "error",
+    }),
+    new winston.transports.File({
+      filename: path.join(logDir, "ai-product-photo.log"),
+    })
+  );
+} catch (error) {
+  console.error("Failed to initialize file logger:", error);
+}
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || "info",
@@ -17,26 +42,7 @@ const logger = winston.createLogger({
     })
   ),
   defaultMeta: { service: "ai-product-photo" },
-  transports: [
-    new winston.transports.File({
-      filename: path.join(logDir, "ai-product-photo-error.log"),
-      level: "error",
-    }),
-    new winston.transports.File({
-      filename: path.join(logDir, "ai-product-photo.log"),
-    }),
-  ],
+  transports,
 });
-
-if (process.env.NODE_ENV !== "production") {
-  logger.add(
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
-    })
-  );
-}
 
 export default logger;

@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { fal } from "@fal-ai/client";
 import sharp from "sharp";
-
-// 临时用 console 代替 logger，方便调试
-const logger = {
-  info: (msg: string, meta?: any) => console.log(`[INFO] ${msg}`, meta || ""),
-  warn: (msg: string, meta?: any) => console.warn(`[WARN] ${msg}`, meta || ""),
-  error: (msg: string, meta?: any) => console.error(`[ERROR] ${msg}`, meta || ""),
-};
+import logger from "@/lib/logger";
 
 fal.config({
   credentials: process.env.FAL_KEY,
@@ -139,7 +133,8 @@ export async function POST(request: Request) {
     } catch (uploadError) {
       logger.error("FAL storage upload failed", {
         template,
-        error: uploadError instanceof Error ? uploadError.message : String(uploadError),
+        error:
+          uploadError instanceof Error ? uploadError.message : String(uploadError),
       });
       throw new Error("图片上传失败，请检查网络连接");
     }
@@ -166,7 +161,8 @@ export async function POST(request: Request) {
       } catch (modelError) {
         logger.error("Birefnet model failed", {
           template,
-          error: modelError instanceof Error ? modelError.message : String(modelError),
+          error:
+            modelError instanceof Error ? modelError.message : String(modelError),
           stack: modelError instanceof Error ? modelError.stack : undefined,
         });
         throw new Error("AI 模型处理失败，请重试");
@@ -196,7 +192,8 @@ export async function POST(request: Request) {
       } catch (modelError) {
         logger.error("Flux-kontext model failed", {
           template,
-          error: modelError instanceof Error ? modelError.message : String(modelError),
+          error:
+            modelError instanceof Error ? modelError.message : String(modelError),
           stack: modelError instanceof Error ? modelError.stack : undefined,
         });
         throw new Error("AI 模型处理超时，请重试");

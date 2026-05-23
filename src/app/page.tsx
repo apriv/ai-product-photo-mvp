@@ -67,7 +67,7 @@ async function compressImage(file: File): Promise<File> {
         ctx.drawImage(img, 0, 0, width, height);
 
         // 压缩质量直到达到目标大小
-        let quality = 0.9;
+        const quality = 0.9;
         canvas.toBlob(
           (blob) => {
             const compressed = new File([blob!], file.name, {
@@ -111,7 +111,7 @@ export default function Home() {
       setImage(URL.createObjectURL(compressedFile));
       setGeneratedImage(null);
       setStatus("");
-    } catch (error) {
+    } catch {
       setErrorMessage("图片处理失败，请尝试其他图片");
       setStatus("");
     }
