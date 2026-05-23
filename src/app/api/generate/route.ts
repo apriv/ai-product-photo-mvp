@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { fal } from "@fal-ai/client";
 import sharp from "sharp";
-import logger from "@/lib/logger";
+
+// 临时用 console 代替 logger，方便调试
+const logger = {
+  info: (msg: string, meta?: any) => console.log(`[INFO] ${msg}`, meta || ""),
+  warn: (msg: string, meta?: any) => console.warn(`[WARN] ${msg}`, meta || ""),
+  error: (msg: string, meta?: any) => console.error(`[ERROR] ${msg}`, meta || ""),
+};
 
 fal.config({
   credentials: process.env.FAL_KEY,

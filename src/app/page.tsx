@@ -266,6 +266,7 @@ export default function Home() {
               src={generatedImage}
               alt="generated"
               className="rounded-2xl border bg-gray-100"
+              crossOrigin="anonymous"
             />
 
             <a
