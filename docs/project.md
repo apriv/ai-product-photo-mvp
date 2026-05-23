@@ -31,6 +31,8 @@
 - `sharp` — 服务端图像处理（占位图）
 - `react-dropzone` — 拖拽上传
 - `winston` — 日志（控制台 + 文件，路径默认 `./logs`）
+- **Prisma 7 + SQLite**（`@prisma/adapter-better-sqlite3`）— 用户/积分/激活码数据持久化
+- **bcryptjs** — 密码哈希
 
 ## 目录结构
 
@@ -54,13 +56,27 @@ src/
 ├── components/
 │   └── AccessGate.tsx              # 密码 gate 组件 + useAccess() hook
 │
+├── generated/prisma/               # 自动生成，gitignore，prisma generate 产出
+│
 └── lib/                            # 跨功能共享工具
     ├── fal-client.ts               # fal.config() 统一入口
+    ├── prisma.ts                   # PrismaClient 单例（server-only）
     ├── access-control.ts           # 服务端密码校验
     ├── access-shared.ts            # 客户端/服务端共享常量
     ├── image-compression.ts        # 浏览器端图片压缩（压到 1MB 内）
     ├── logger.ts                   # winston 实例
     └── request-meta.ts             # 请求 ID + 客户端 IP 提取
+
+prisma/
+├── schema.prisma                   # 数据模型（9 张表）
+├── migrations/                     # 历史迁移，受 git 管理
+├── seed.ts                         # 插入基础套餐（STD / TOPUP-100）
+└── dev.db                          # SQLite 文件，gitignore
+
+scripts/
+└── create-admin.ts                 # 命令行创建管理员账号
+
+prisma.config.ts                    # Prisma 7 配置（DATABASE_URL 来源）
 ```
 
 ## 关键约定
@@ -72,18 +88,23 @@ src/
 ## 环境变量（`.env.local`）
 
 ```
-APP_PASSWORD=...      # 整站访问密码
-FAL_KEY=...           # fal.ai API key
-LOG_LEVEL=info        # 可选，默认 info
-LOG_DIR=./logs        # 可选，winston 文件日志目录
+APP_PASSWORD=...                  # 整站访问密码（临时，用户系统上线后废弃）
+FAL_KEY=...                       # fal.ai API key
+LOG_LEVEL=info                    # 可选，默认 info
+LOG_DIR=./logs                    # 可选，winston 文件日志目录
+DATABASE_URL="file:./prisma/dev.db"   # SQLite 路径（相对项目根 cwd）
 ```
 
 ## 本地运行
 
 ```bash
-npm install
-npm run dev           # http://localhost:3000
-npm run build         # 生产构建
+npm install                                # 自动跑 prisma generate
+npx prisma migrate deploy                  # 首次：建库 + 跑迁移
+npm run db:seed                            # 写入基础套餐
+npx tsx scripts/create-admin.ts \
+  --username admin --password <pwd>        # 创建第一个管理员
+npm run dev                                # http://localhost:3000
+npm run build
 npm run lint
 ```
 

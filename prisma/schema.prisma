@@ -1,0 +1,141 @@
+// Prisma schema — see docs/user-management.md for the design rationale.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ------------------------------------------------------------------ Users
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  lastLoginAt  DateTime?
+
+  wallet      CreditWallet?
+  sessions    Session[]
+  activations ActivationCode[]
+  ledger      CreditLedger[]
+  generations GenerationLog[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  ip        String?
+  userAgent String?
+
+  @@index([userId])
+}
+
+// ------------------------------------------------------------------ Plans / Codes
+
+enum PlanKind {
+  MONTHLY
+  TOPUP
+}
+
+model Plan {
+  id             String   @id // e.g. "STD", "TOPUP-100"
+  name           String
+  monthlyCredits Int      @default(0)
+  topupCredits   Int      @default(0)
+  kind           PlanKind
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  codes ActivationCode[]
+}
+
+enum CodeStatus {
+  UNUSED
+  USED
+  DISABLED
+}
+
+model ActivationCode {
+  code         String     @id // e.g. "STD-7K3M9XQP2VWN"
+  planId       String
+  plan         Plan       @relation(fields: [planId], references: [id])
+  status       CodeStatus @default(UNUSED)
+  usedByUserId String?
+  usedBy       User?      @relation(fields: [usedByUserId], references: [id])
+  usedAt       DateTime?
+  createdAt    DateTime   @default(now())
+  note         String?
+
+  @@index([status])
+  @@index([planId])
+}
+
+// ------------------------------------------------------------------ Credits
+
+model CreditWallet {
+  userId        String    @id
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance       Int       @default(0)
+  activePlanId  String?
+  planExpiresAt DateTime?
+  nextRefillAt  DateTime?
+  updatedAt     DateTime  @updatedAt
+}
+
+enum LedgerReason {
+  ACTIVATION
+  MONTHLY_REFILL
+  GENERATION
+  ADMIN_ADJUST
+  REFUND
+}
+
+model CreditLedger {
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta        Int
+  reason       LedgerReason
+  refId        String?
+  balanceAfter Int
+  createdAt    DateTime     @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// ------------------------------------------------------------------ Generation log
+
+enum GenerationStatus {
+  SUCCESS
+  FAILED
+}
+
+model GenerationLog {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feature    String // "image" | "video"
+  template   String
+  model      String?
+  cost       Int
+  status     GenerationStatus
+  errorMsg   String?
+  durationMs Int?
+  createdAt  DateTime         @default(now())
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
