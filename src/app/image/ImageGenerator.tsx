@@ -756,7 +756,7 @@ async function exportElementToPng(element: HTMLElement) {
   clone.style.height = `${height}px`;
 
   const serialized = new XMLSerializer().serializeToString(clone);
-  const fontFaceCss = getFontFaceCss();
+  const fontFaceCss = await getEmbeddedFontFaceCss();
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
       <defs><style>${fontFaceCss}</style></defs>
@@ -785,23 +785,46 @@ function loadImage(src: string) {
   });
 }
 
-function getFontFaceCss() {
-  let css = "";
+async function getEmbeddedFontFaceCss() {
+  const rules: string[] = [];
   for (const sheet of Array.from(document.styleSheets)) {
     try {
       for (const rule of Array.from(sheet.cssRules)) {
         if (rule.cssText.includes("@font-face")) {
-          css += `${rule.cssText}\n`;
+          rules.push(rule.cssText);
         }
       }
     } catch {
       // Cross-origin stylesheets are ignored; next/font rules are same-origin.
     }
   }
-  return css
-    .replace(/]]>/g, "")
-    .replace(
-      /url\((['"]?)(\/[^)'"]+)\1\)/g,
-      `url("${window.location.origin}$2")`
-    );
+
+  const embeddedRules = await Promise.all(
+    rules.map(async (rule) => {
+      const urlMatch = rule.match(/url\((['"]?)([^)'"]+)\1\)/);
+      if (!urlMatch) return rule;
+
+      const fontUrl = new URL(urlMatch[2], window.location.origin).toString();
+      try {
+        const response = await fetch(fontUrl);
+        if (!response.ok) return rule;
+        const blob = await response.blob();
+        const dataUrl = await blobToDataUrl(blob);
+        return rule.replace(/url\((['"]?)([^)'"]+)\1\)/, `url("${dataUrl}")`);
+      } catch {
+        return rule;
+      }
+    })
+  );
+
+  return embeddedRules.join("\n").replace(/]]>/g, "");
+}
+
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("字体读取失败"));
+    reader.readAsDataURL(blob);
+  });
 }
