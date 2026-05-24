@@ -155,7 +155,7 @@ npm run lint
 
 ### 近期（小改动，ROI 高）
 
-- 海报文字自定义：用户输入文案 + 选预设字体，注入 prompt
+- 海报文字自定义：Layer 1 AI 底图 + Layer 2 固定文字模板，详见 [`poster-generation-v1.md`](./poster-generation-v1.md)
 - 常用尺寸预设：banner / 主图 / 详情图 等比例
 
 ### 中期（变现前置，三件事必须捆绑做）

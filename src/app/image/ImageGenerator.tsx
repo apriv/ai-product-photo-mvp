@@ -10,8 +10,19 @@ import {
   formatFileSize,
 } from "@/lib/image-compression";
 import { imageTemplates, getImageTemplate } from "@/features/image/templates";
+import {
+  defaultPosterText,
+  getPosterFontSize,
+  isPosterTextTooLong,
+  posterTextTemplates,
+  type PosterTemplateId,
+  type PosterTextField,
+  type PosterTextValues,
+  type PosterTextTemplate,
+} from "@/features/poster/text-templates";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const POSTER_TEMPLATE_NAME = "社媒海报";
 
 const debug = {
   log: (label: string, data?: unknown) => {
@@ -33,11 +44,17 @@ export default function ImageGenerator() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [finalPosterImage, setFinalPosterImage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [compressionInfo, setCompressionInfo] =
     useState<CompressionInfo | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
   const [planExpired, setPlanExpired] = useState(false);
+  const [posterTemplateId, setPosterTemplateId] =
+    useState<PosterTemplateId>("minimal");
+  const [posterText, setPosterText] =
+    useState<PosterTextValues>(defaultPosterText);
+  const [posterRendering, setPosterRendering] = useState(false);
 
   const fetchWallet = useCallback(async () => {
     try {
@@ -98,6 +115,7 @@ export default function ImageGenerator() {
       setImage(URL.createObjectURL(selectedFile));
       setCompressionInfo(result.info);
       setGeneratedImage(null);
+      setFinalPosterImage(null);
       setStatus("");
     } catch (error) {
       const errorMsg =
@@ -155,6 +173,8 @@ export default function ImageGenerator() {
       }
 
       setGeneratedImage(data.imageUrl);
+      setFinalPosterImage(null);
+      setPosterText(defaultPosterText);
       setStatus("");
       fetchWallet();
     } catch (error) {
@@ -167,6 +187,57 @@ export default function ImageGenerator() {
       setStatus("");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const selectedPosterTemplate =
+    posterTextTemplates.find((item) => item.id === posterTemplateId) ??
+    posterTextTemplates[0];
+  const isPosterFlow =
+    selectedTemplate === POSTER_TEMPLATE_NAME && Boolean(generatedImage);
+
+  const handlePosterTextChange = (field: PosterTextField, value: string) => {
+    setPosterText((current) => ({ ...current, [field]: value }));
+    setFinalPosterImage(null);
+  };
+
+  const handleRenderPoster = async () => {
+    if (!generatedImage) return;
+
+    setPosterRendering(true);
+    setErrorMessage("");
+
+    try {
+      const response = await fetch("/api/poster/render", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageUrl: generatedImage,
+          templateId: posterTemplateId,
+          ...posterText,
+        }),
+      });
+      const data = await response.json();
+
+      if (response.status === 401) {
+        router.replace("/login");
+        return;
+      }
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "海报渲染失败，请重试");
+      }
+
+      setFinalPosterImage(data.imageUrl);
+    } catch (error) {
+      debug.error("Poster render failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      setErrorMessage(
+        error instanceof Error ? error.message : "海报渲染失败，请重试"
+      );
+    } finally {
+      setPosterRendering(false);
     }
   };
 
@@ -273,6 +344,7 @@ export default function ImageGenerator() {
                 if (item.enabled && !loading) {
                   setSelectedTemplate(item.name);
                   setGeneratedImage(null);
+                  setFinalPosterImage(null);
                   setErrorMessage("");
                 }
               }}
@@ -334,24 +406,204 @@ export default function ImageGenerator() {
         {generatedImage && (
           <div className="mt-8">
             <h2 className="mb-4 text-xl font-semibold text-gray-900">
-              生成结果
+              {isPosterFlow ? "编辑海报文字" : "生成结果"}
             </h2>
-            <img
-              src={generatedImage}
-              alt="generated"
-              className="rounded-2xl border bg-gray-100"
-              crossOrigin="anonymous"
-            />
-            <a
-              href={generatedImage}
-              download
-              className="mt-4 inline-block rounded-lg bg-black px-5 py-2 text-white"
-            >
-              打开/下载图片
-            </a>
+            {isPosterFlow ? (
+              <div>
+                <div className="mb-4 grid grid-cols-2 gap-3">
+                  {posterTextTemplates.map((template) => (
+                    <button
+                      key={template.id}
+                      type="button"
+                      onClick={() => {
+                        setPosterTemplateId(template.id);
+                        setFinalPosterImage(null);
+                      }}
+                      className={`rounded-xl border p-3 text-left transition ${
+                        posterTemplateId === template.id
+                          ? "border-black bg-gray-50"
+                          : "border-gray-200 hover:border-black"
+                      }`}
+                    >
+                      <div className="text-sm font-semibold text-gray-900">
+                        {template.name}
+                      </div>
+                      <div className="mt-1 text-xs text-gray-500">
+                        {template.desc}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <PosterEditor
+                  imageUrl={generatedImage}
+                  template={selectedPosterTemplate}
+                  values={posterText}
+                  onChange={handlePosterTextChange}
+                />
+
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleRenderPoster}
+                    disabled={posterRendering}
+                    className="rounded-lg bg-black px-5 py-2 text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+                  >
+                    {posterRendering ? "渲染中..." : "确认并生成海报"}
+                  </button>
+                  {finalPosterImage && (
+                    <a
+                      href={finalPosterImage}
+                      download
+                      className="rounded-lg border border-gray-300 px-5 py-2 text-gray-900 hover:border-black"
+                    >
+                      打开/下载图片
+                    </a>
+                  )}
+                </div>
+
+                {finalPosterImage && (
+                  <div className="mt-6">
+                    <h3 className="mb-3 text-base font-semibold text-gray-900">
+                      最终海报
+                    </h3>
+                    <img
+                      src={finalPosterImage}
+                      alt="final poster"
+                      className="rounded-2xl border bg-gray-100"
+                    />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <img
+                  src={generatedImage}
+                  alt="generated"
+                  className="rounded-2xl border bg-gray-100"
+                  crossOrigin="anonymous"
+                />
+                <a
+                  href={generatedImage}
+                  download
+                  className="mt-4 inline-block rounded-lg bg-black px-5 py-2 text-white"
+                >
+                  打开/下载图片
+                </a>
+              </>
+            )}
           </div>
         )}
       </div>
     </main>
+  );
+}
+
+type PosterEditorProps = {
+  imageUrl: string;
+  template: PosterTextTemplate;
+  values: PosterTextValues;
+  onChange: (field: PosterTextField, value: string) => void;
+};
+
+function PosterEditor({
+  imageUrl,
+  template,
+  values,
+  onChange,
+}: PosterEditorProps) {
+  return (
+    <div
+      className="relative aspect-square overflow-hidden rounded-2xl border bg-gray-100"
+      style={{ containerType: "inline-size" }}
+    >
+      <img
+        src={imageUrl}
+        alt="generated poster background"
+        className="h-full w-full object-cover"
+      />
+      {template.overlay?.kind === "bottom-gradient" && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-b from-transparent to-black/70" />
+      )}
+      {(["title", "subtitle", "cta"] as PosterTextField[]).map((field) => (
+        <PosterInlineTextInput
+          key={field}
+          field={field}
+          template={template}
+          value={values[field]}
+          onChange={(value) => onChange(field, value)}
+        />
+      ))}
+    </div>
+  );
+}
+
+type PosterInlineTextInputProps = {
+  field: PosterTextField;
+  template: PosterTextTemplate;
+  value: string;
+  onChange: (value: string) => void;
+};
+
+function PosterInlineTextInput({
+  field,
+  template,
+  value,
+  onChange,
+}: PosterInlineTextInputProps) {
+  const box = template.fields[field];
+  const fontSize = getPosterFontSize(value, box);
+  const tooLong = isPosterTextTooLong(value, box);
+  const left =
+    box.align === "center"
+      ? box.x - box.width / 2
+      : box.align === "right"
+        ? box.x - box.width
+        : box.x;
+  const commonStyle = {
+    left: `${left}%`,
+    top: `${box.y}%`,
+    width: `${box.width}%`,
+    color: box.color,
+    fontFamily: box.fontFamily,
+    fontWeight: box.fontWeight,
+    fontSize: `${fontSize / 10.24}cqw`,
+    lineHeight: box.lineHeight,
+    textAlign: box.align,
+    textTransform: box.uppercase ? "uppercase" : undefined,
+    textShadow: box.shadow,
+  } as const;
+
+  if (field === "cta") {
+    return (
+      <div className="absolute" style={commonStyle}>
+        <input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          aria-label="CTA"
+          className={`w-full rounded-full border bg-transparent px-[1.35em] py-[0.65em] text-center outline-none transition focus:border-white/80 ${
+            tooLong ? "border-red-400" : "border-transparent"
+          }`}
+          style={{
+            background: box.background?.color,
+            color: box.color,
+            borderRadius: box.background?.radius,
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <textarea
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      rows={box.maxLines}
+      aria-label={field === "title" ? "标题" : "副标题"}
+      className={`absolute resize-none overflow-hidden border bg-transparent outline-none transition focus:border-white/80 ${
+        tooLong ? "border-red-400" : "border-transparent"
+      }`}
+      style={commonStyle}
+    />
   );
 }

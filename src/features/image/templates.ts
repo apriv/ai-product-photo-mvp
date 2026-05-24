@@ -2,7 +2,7 @@ export const BIREFNET_MODEL = "fal-ai/birefnet";
 export const POSTER_MODEL = "xai/grok-imagine-image/edit";
 
 const POSTER_PROMPT = `
-Create a premium Instagram-style ecommerce poster using the uploaded product as the main subject. Keep the product completely realistic and unchanged, preserving the exact shape, colors, logo, material, and details. Use cinematic soft lighting, realistic shadows, elegant composition, and a visually rich luxury background with subtle gradients, reflections, textures, or studio elements instead of plain flat colors. Add minimal clean English advertising text related to the product, using short stylish phrases with correct spelling. Avoid clutter, fake logos, watermarks, distorted objects, oversaturated colors, or cheap AI-generated aesthetics. The final result should look like a real high-end commercial social media advertisement.
+Create a premium Instagram-style ecommerce poster background using the uploaded product as the main subject. Keep the product completely realistic and unchanged, preserving the exact shape, colors, logo, material, and details. Use cinematic soft lighting, realistic shadows, elegant composition, and a visually rich luxury background with subtle gradients, reflections, textures, or studio elements instead of plain flat colors. Leave tasteful clean space for advertising text to be added later. Do not generate any text, letters, numbers, fake logos, captions, watermarks, or gibberish. Avoid clutter, distorted objects, oversaturated colors, or cheap AI-generated aesthetics. The final result should look like a real high-end commercial social media advertisement ready for a separate text layer.
 `;
 
 const LISTING_BOARD_PROMPT = `
