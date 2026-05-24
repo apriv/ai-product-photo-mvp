@@ -13,7 +13,7 @@
 - **社媒海报** — fal `xai/grok-imagine-image/edit`，生成 Instagram 风格高端海报（**10 积分**）
 - **白底商品展示图** — 同上模型，换 prompt，生成多角度展示版（**10 积分**）
 - **仅抠图** — fal `fal-ai/birefnet`，只做背景去除（**5 积分**）
-- **占位预览** — sharp 生成 SVG placeholder，不调外部 API，用于测试（**0 积分**）
+- **添加标题** — 不调外部模型，返回上传后的图片作为底图，再走海报文字层编辑（**0 积分**）
 
 扣费流程：先 `chargeCredits()` 原子扣费 + 写 ledger → 调 fal → fal 失败时 `refund()` 退回并写 ledger。每次生成（成功/失败）都写一行 `GenerationLog`，用于后续统计成本和成功率。
 
@@ -115,7 +115,7 @@ prisma.config.ts                    # Prisma 7 配置（DATABASE_URL 来源）
 
 ## 关键约定
 
-- **新增图片模板** = 只改 `src/features/image/templates.ts`。API route 按 `kind`（`fal-poster` / `fal-birefnet` / `placeholder`）dispatch，不用动 route 文件。
+- **新增图片模板** = 只改 `src/features/image/templates.ts`。API route 按 `kind`（`fal-poster` / `fal-birefnet` / `title-overlay`）dispatch，不用动 route 文件。
 - **新增页面** = 在 `src/app/<name>/page.tsx` 加路由，proxy 自动要求登录。如果是公开页面，需要在 `src/proxy.ts` 的 `PUBLIC_PATHS` 加白名单。
 - **服务端拿用户** = `requireUser()` / `requireAdmin()`，throw `AuthError` 时 catch 块自动转 HTTP 状态码。
 

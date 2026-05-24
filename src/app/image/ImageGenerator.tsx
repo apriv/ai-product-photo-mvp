@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { useDropzone } from "react-dropzone";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -23,6 +23,7 @@ import {
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const POSTER_TEMPLATE_NAME = "社媒海报";
+const TITLE_TEMPLATE_NAME = "添加标题";
 
 const debug = {
   log: (label: string, data?: unknown) => {
@@ -38,6 +39,7 @@ const debug = {
 
 export default function ImageGenerator() {
   const router = useRouter();
+  const posterEditorRef = useRef<HTMLDivElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState("社媒海报");
@@ -194,7 +196,9 @@ export default function ImageGenerator() {
     posterTextTemplates.find((item) => item.id === posterTemplateId) ??
     posterTextTemplates[0];
   const isPosterFlow =
-    selectedTemplate === POSTER_TEMPLATE_NAME && Boolean(generatedImage);
+    (selectedTemplate === POSTER_TEMPLATE_NAME ||
+      selectedTemplate === TITLE_TEMPLATE_NAME) &&
+    Boolean(generatedImage);
 
   const handlePosterTextChange = (field: PosterTextField, value: string) => {
     setPosterText((current) => ({ ...current, [field]: value }));
@@ -202,33 +206,18 @@ export default function ImageGenerator() {
   };
 
   const handleRenderPoster = async () => {
-    if (!generatedImage) return;
+    if (!generatedImage || !posterEditorRef.current) return;
 
     setPosterRendering(true);
     setErrorMessage("");
 
     try {
-      const response = await fetch("/api/poster/render", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageUrl: generatedImage,
-          templateId: posterTemplateId,
-          ...posterText,
-        }),
-      });
-      const data = await response.json();
-
-      if (response.status === 401) {
-        router.replace("/login");
-        return;
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
       }
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "海报渲染失败，请重试");
-      }
-
-      setFinalPosterImage(data.imageUrl);
+      await new Promise((resolve) => window.requestAnimationFrame(resolve));
+      const imageUrl = await exportElementToPng(posterEditorRef.current);
+      setFinalPosterImage(imageUrl);
     } catch (error) {
       debug.error("Poster render failed", {
         error: error instanceof Error ? error.message : String(error),
@@ -399,6 +388,8 @@ export default function ImageGenerator() {
               ? `${status || "处理中..."}`
               : planExpired
                 ? "套餐已到期，请先激活"
+                : selectedTemplate === TITLE_TEMPLATE_NAME
+                  ? "开始添加标题"
                 : "生成商品图"}
           </button>
         )}
@@ -437,6 +428,7 @@ export default function ImageGenerator() {
 
                 <div className="mx-auto max-w-xl">
                   <PosterEditor
+                    editorRef={posterEditorRef}
                     imageUrl={generatedImage}
                     template={selectedPosterTemplate}
                     values={posterText}
@@ -502,6 +494,7 @@ export default function ImageGenerator() {
 }
 
 type PosterEditorProps = {
+  editorRef: RefObject<HTMLDivElement | null>;
   imageUrl: string;
   template: PosterTextTemplate;
   values: PosterTextValues;
@@ -509,6 +502,7 @@ type PosterEditorProps = {
 };
 
 function PosterEditor({
+  editorRef,
   imageUrl,
   template,
   values,
@@ -516,6 +510,7 @@ function PosterEditor({
 }: PosterEditorProps) {
   return (
     <div
+      ref={editorRef}
       className="relative aspect-square overflow-hidden rounded-2xl border bg-gray-100"
       style={{ containerType: "inline-size" }}
     >
@@ -617,4 +612,119 @@ function PosterInlineTextInput({
       style={commonStyle}
     />
   );
+}
+
+function copyComputedStyle(source: Element, target: HTMLElement) {
+  const computed = window.getComputedStyle(source);
+  for (const property of Array.from(computed)) {
+    target.style.setProperty(
+      property,
+      computed.getPropertyValue(property),
+      computed.getPropertyPriority(property)
+    );
+  }
+}
+
+function inlineComputedStyles(source: Element, target: Element) {
+  if (target instanceof HTMLElement) {
+    copyComputedStyle(source, target);
+  }
+
+  const sourceChildren = Array.from(source.children);
+  const targetChildren = Array.from(target.children);
+  sourceChildren.forEach((sourceChild, index) => {
+    const targetChild = targetChildren[index];
+    if (targetChild) inlineComputedStyles(sourceChild, targetChild);
+  });
+}
+
+function replaceEditableControls(sourceRoot: HTMLElement, cloneRoot: HTMLElement) {
+  const sourceControls = Array.from(
+    sourceRoot.querySelectorAll("input, textarea")
+  ) as Array<HTMLInputElement | HTMLTextAreaElement>;
+  const cloneControls = Array.from(
+    cloneRoot.querySelectorAll("input, textarea")
+  ) as Array<HTMLInputElement | HTMLTextAreaElement>;
+
+  sourceControls.forEach((sourceControl, index) => {
+    const cloneControl = cloneControls[index];
+    if (!cloneControl || !cloneControl.parentElement) return;
+
+    const replacement = document.createElement("div");
+    copyComputedStyle(sourceControl, replacement);
+    replacement.textContent = sourceControl.value;
+    replacement.style.boxSizing = "border-box";
+    replacement.style.outline = "none";
+    replacement.style.caretColor = "transparent";
+
+    if (sourceControl instanceof HTMLTextAreaElement) {
+      replacement.style.whiteSpace = "pre-wrap";
+      replacement.style.overflow = "hidden";
+    } else {
+      replacement.style.display = "flex";
+      replacement.style.alignItems = "center";
+      replacement.style.justifyContent = "center";
+      replacement.style.whiteSpace = "nowrap";
+    }
+
+    cloneControl.parentElement.replaceChild(replacement, cloneControl);
+  });
+}
+
+async function waitForImages(root: HTMLElement) {
+  const images = Array.from(root.querySelectorAll("img"));
+  await Promise.all(
+    images.map((image) => {
+      if (image.complete && image.naturalWidth > 0) return Promise.resolve();
+      return new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error("图片加载失败"));
+      });
+    })
+  );
+}
+
+async function exportElementToPng(element: HTMLElement) {
+  await document.fonts.ready;
+  await waitForImages(element);
+
+  const rect = element.getBoundingClientRect();
+  const width = Math.round(rect.width);
+  const height = Math.round(rect.height);
+  if (!width || !height) throw new Error("海报区域尺寸无效");
+
+  const clone = element.cloneNode(true) as HTMLElement;
+  inlineComputedStyles(element, clone);
+  replaceEditableControls(element, clone);
+  clone.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+  clone.style.margin = "0";
+  clone.style.width = `${width}px`;
+  clone.style.height = `${height}px`;
+
+  const serialized = new XMLSerializer().serializeToString(clone);
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+      <foreignObject width="100%" height="100%">${serialized}</foreignObject>
+    </svg>
+  `;
+  const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  const image = await loadImage(svgUrl);
+  const scale = Math.max(2, Math.ceil(window.devicePixelRatio || 1));
+  const canvas = document.createElement("canvas");
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("无法创建图片画布");
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  ctx.drawImage(image, 0, 0, width, height);
+  return canvas.toDataURL("image/png");
+}
+
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("海报导出失败"));
+    image.src = src;
+  });
 }

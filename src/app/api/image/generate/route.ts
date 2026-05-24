@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import sharp from "sharp";
 import { fal } from "@/lib/fal-client";
 import { AuthError, requireUser } from "@/lib/auth";
 import {
@@ -14,25 +13,31 @@ import { createRequestId, getRequestMeta } from "@/lib/request-meta";
 import { getImageTemplate, type ImageTemplate } from "@/features/image/templates";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_RESULT_IMAGE_BYTES = 12 * 1024 * 1024;
 
-async function generatePlaceholder(): Promise<string> {
-  const svg = `
-    <svg width="800" height="800" xmlns="http://www.w3.org/2000/svg">
-      <rect width="800" height="800" fill="white"/>
-      <rect x="50" y="50" width="700" height="700" fill="none" stroke="#ddd" stroke-width="2" stroke-dasharray="10,5"/>
-      <text x="400" y="380" font-family="Arial" font-size="32" fill="#999" text-anchor="middle">
-        白底主图 (Placeholder)
-      </text>
-      <text x="400" y="440" font-family="Arial" font-size="16" fill="#bbb" text-anchor="middle">
-        测试用 - 不消耗 Token
-      </text>
-      <text x="400" y="480" font-family="Arial" font-size="14" fill="#ddd" text-anchor="middle">
-        生成时间: ${new Date().toLocaleString("zh-CN")}
-      </text>
-    </svg>
-  `;
-  const buffer = await sharp(Buffer.from(svg)).png().toBuffer();
-  return `data:image/png;base64,${buffer.toString("base64")}`;
+async function fileToDataUrl(file: File): Promise<string> {
+  const buffer = Buffer.from(await file.arrayBuffer());
+  return `data:${file.type || "image/png"};base64,${buffer.toString("base64")}`;
+}
+
+async function remoteImageToDataUrl(imageUrl: string): Promise<string> {
+  const response = await fetch(imageUrl, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error("读取生成图片失败");
+  }
+
+  const contentLength = response.headers.get("content-length");
+  if (contentLength && Number(contentLength) > MAX_RESULT_IMAGE_BYTES) {
+    throw new Error("生成图片过大");
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  if (arrayBuffer.byteLength > MAX_RESULT_IMAGE_BYTES) {
+    throw new Error("生成图片过大");
+  }
+
+  const contentType = response.headers.get("content-type") || "image/png";
+  return `data:${contentType};base64,${Buffer.from(arrayBuffer).toString("base64")}`;
 }
 
 // Refund a previously-charged amount (e.g. fal failed after we already
@@ -115,31 +120,30 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate input (file required unless placeholder)
-    if (template.kind !== "placeholder") {
-      if (!image || !(image instanceof File)) {
-        return NextResponse.json(
-          { success: false, error: "没有收到图片文件" },
-          { status: 400 }
-        );
-      }
-      fileSizeMB = (image.size / 1024 / 1024).toFixed(2);
-      if (image.size > MAX_FILE_SIZE) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `图片过大（${fileSizeMB}MB），限制 10MB`,
-          },
-          { status: 400 }
-        );
-      }
+    if (!image || !(image instanceof File)) {
+      return NextResponse.json(
+        { success: false, error: "没有收到图片文件" },
+        { status: 400 }
+      );
+    }
+    fileSizeMB = (image.size / 1024 / 1024).toFixed(2);
+    if (image.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `图片过大（${fileSizeMB}MB），限制 10MB`,
+        },
+        { status: 400 }
+      );
     }
 
-    // ----- Placeholder: no charge, no fal -----
-    if (template.kind === "placeholder") {
-      const placeholderUrl = await generatePlaceholder();
+    const imageFile = image as File;
+
+    // ----- Add title: no charge, no fal. Return the uploaded (already client-compressed) image. -----
+    if (template.kind === "title-overlay") {
+      const imageUrl = await fileToDataUrl(imageFile);
       const duration = Date.now() - startTime;
-      logger.info("Placeholder generated", {
+      logger.info("Title overlay base image prepared", {
         ...requestMeta,
         userId,
         template: templateName,
@@ -153,7 +157,8 @@ export async function POST(request: Request) {
         status: "SUCCESS",
         durationMs: duration,
       });
-      return NextResponse.json({ success: true, imageUrl: placeholderUrl });
+      const safeImageUrl = await remoteImageToDataUrl(imageUrl);
+      return NextResponse.json({ success: true, imageUrl: safeImageUrl });
     }
 
     // ----- Real generation: charge first, then call fal -----
@@ -180,8 +185,6 @@ export async function POST(request: Request) {
       }
       throw chargeError;
     }
-
-    const imageFile = image as File;
 
     let uploadUrl: string;
     try {
@@ -226,6 +229,7 @@ export async function POST(request: Request) {
         totalDuration: `${duration}ms`,
         cost: template.cost,
       });
+      const safeImageUrl = await remoteImageToDataUrl(imageUrl);
       await recordGeneration({
         userId,
         feature: "image",
@@ -235,7 +239,7 @@ export async function POST(request: Request) {
         status: "SUCCESS",
         durationMs: duration,
       });
-      return NextResponse.json({ success: true, imageUrl });
+      return NextResponse.json({ success: true, imageUrl: safeImageUrl });
     } catch (modelError) {
       await refund(userId, template.cost, requestId);
       const errMsg =

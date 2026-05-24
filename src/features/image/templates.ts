@@ -4,7 +4,7 @@ export type ImageTemplate = {
   name: string;
   desc: string;
   enabled: boolean;
-  kind: "fal-poster" | "fal-birefnet" | "placeholder";
+  kind: "fal-poster" | "fal-birefnet" | "title-overlay";
   cost: number; // credits charged per successful generation
   model?: string;
   prompt?: string;
@@ -13,7 +13,7 @@ export type ImageTemplate = {
 export const imageTemplates: ImageTemplate[] = [
   {
     name: "社媒海报",
-    desc: "生成带背景、灯光、海报感的高端商品图，适合小红书/Instagram",
+    desc: "生成带背景、灯光、海报感的高端商品图",
     enabled: true,
     kind: "fal-poster",
     cost: 10,
@@ -38,10 +38,10 @@ export const imageTemplates: ImageTemplate[] = [
     model: imageModels.backgroundRemoval,
   },
   {
-    name: "占位预览",
-    desc: "生成测试用 Placeholder 不消耗 Token",
+    name: "添加标题",
+    desc: "不调 AI，直接给原图添加海报文字",
     enabled: true,
-    kind: "placeholder",
+    kind: "title-overlay",
     cost: 0,
   },
 ];
