@@ -139,7 +139,7 @@ export const posterTextTemplates: PosterTextTemplate[] = [
         x: 8,
         y: 84,
         width: 34,
-        align: "center",
+        align: "left",
         color: "#2d2115",
         fontFamily: SANS,
         fontWeight: 800,
@@ -194,7 +194,7 @@ export const posterTextTemplates: PosterTextTemplate[] = [
         x: 92,
         y: 32,
         width: 34,
-        align: "center",
+        align: "right",
         color: "#021014",
         fontFamily: SANS,
         fontWeight: 900,
@@ -304,4 +304,3 @@ export function isPosterTextTooLong(text: string, box: PosterTextBox) {
   const fontSize = getPosterFontSize(text, box);
   return fontSize <= box.minFontSize && getTextMeasure(text) > box.width * 0.9;
 }
-

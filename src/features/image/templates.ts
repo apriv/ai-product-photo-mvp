@@ -1,13 +1,4 @@
-export const BIREFNET_MODEL = "fal-ai/birefnet";
-export const POSTER_MODEL = "xai/grok-imagine-image/edit";
-
-const POSTER_PROMPT = `
-Create a premium Instagram-style ecommerce poster background using the uploaded product as the main subject. Keep the product completely realistic and unchanged, preserving the exact shape, colors, logo, material, and details. Use cinematic soft lighting, realistic shadows, elegant composition, and a visually rich luxury background with subtle gradients, reflections, textures, or studio elements instead of plain flat colors. Leave tasteful clean space for advertising text to be added later. Do not generate any text, letters, numbers, fake logos, captions, watermarks, or gibberish. Avoid clutter, distorted objects, oversaturated colors, or cheap AI-generated aesthetics. The final result should look like a real high-end commercial social media advertisement ready for a separate text layer.
-`;
-
-const LISTING_BOARD_PROMPT = `
-Create a professional ecommerce listing board on a pure white background using the uploaded product. Place the main hero product image large in the center, surrounded by smaller multi-angle views and close-up detail shots showing texture, materials, buttons, packaging, or important features. Keep the product completely consistent and realistic across all images, preserving the exact shape, colors, logo, proportions, and details. Arrange the images in a clean balanced commercial layout with soft shadows, proper spacing, and premium studio lighting. The final result should look like a professionally designed Amazon or Shopify product listing preview board.
-`;
+import { imageModels, imagePrompts } from "@/features/image/model-config";
 
 export type ImageTemplate = {
   name: string;
@@ -26,8 +17,8 @@ export const imageTemplates: ImageTemplate[] = [
     enabled: true,
     kind: "fal-poster",
     cost: 10,
-    model: POSTER_MODEL,
-    prompt: POSTER_PROMPT,
+    model: imageModels.poster,
+    prompt: imagePrompts.poster,
   },
   {
     name: "白底商品展示图",
@@ -35,8 +26,8 @@ export const imageTemplates: ImageTemplate[] = [
     enabled: true,
     kind: "fal-poster",
     cost: 10,
-    model: POSTER_MODEL,
-    prompt: LISTING_BOARD_PROMPT,
+    model: imageModels.poster,
+    prompt: imagePrompts.listingBoard,
   },
   {
     name: "仅抠图",
@@ -44,7 +35,7 @@ export const imageTemplates: ImageTemplate[] = [
     enabled: true,
     kind: "fal-birefnet",
     cost: 5,
-    model: BIREFNET_MODEL,
+    model: imageModels.backgroundRemoval,
   },
   {
     name: "占位预览",

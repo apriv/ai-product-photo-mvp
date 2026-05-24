@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import sharp from "sharp";
+import { pathToFileURL } from "url";
+import path from "path";
 import { AuthError, requireUser } from "@/lib/auth";
 import { errorResponse } from "@/lib/api-errors";
 import logger from "@/lib/logger";
@@ -16,6 +18,9 @@ import {
 const MAX_REMOTE_IMAGE_BYTES = 12 * 1024 * 1024;
 const OUTPUT_SIZE = 1024;
 const MAX_TEXT_LENGTH = 120;
+const POSTER_FONT_URL = pathToFileURL(
+  path.join(process.cwd(), "public/fonts/NotoSansCJKsc-Regular.otf")
+).href;
 
 type RenderRequest = {
   imageUrl?: unknown;
@@ -38,6 +43,10 @@ function escapeXml(value: string) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
+}
+
+function getSvgFontFamily(box: PosterTextBox) {
+  return `${escapeXml(box.fontFamily)}, PosterCJK, DejaVu Sans, sans-serif`;
 }
 
 function parseDataUrl(dataUrl: string) {
@@ -153,13 +162,13 @@ function renderTextField(
   const top = (box.y / 100) * canvasHeight;
   const anchorX = getAnchorX(box, canvasWidth);
   const anchor = getTextAnchor(box);
-  const escapedFont = escapeXml(box.fontFamily);
+  const fontFamily = getSvgFontFamily(box);
   const letterSpacing = box.letterSpacing ?? 0;
   const textElements = lines
     .map((line, index) => {
       const y = top + fontSize + index * lineHeightPx;
       const escapedLine = escapeXml(line);
-      const baseAttrs = `x="${anchorX.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" font-family="${escapedFont}" font-size="${fontSize}" font-weight="${box.fontWeight}" letter-spacing="${letterSpacing}"`;
+      const baseAttrs = `x="${anchorX.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="${box.fontWeight}" letter-spacing="${letterSpacing}"`;
       const shadow = box.shadow
         ? `<text ${baseAttrs} fill="rgba(0,0,0,0.42)" transform="translate(2 3)">${escapedLine}</text>`
         : "";
@@ -169,20 +178,24 @@ function renderTextField(
 
   if (!box.background || field !== "cta") return textElements;
 
-  const textWidth =
-    Math.min(maxWidthPx, Math.max(...lines.map(getTextMeasure)) * fontSize * 0.62) +
-    box.background.paddingX * 2;
-  const rectWidth = Math.min(maxWidthPx, textWidth);
+  const measuredTextWidth = Math.max(...lines.map(getTextMeasure)) * fontSize * 0.62;
+  const minButtonWidth = fontSize * 7.5;
+  const desiredWidth = Math.max(
+    minButtonWidth,
+    measuredTextWidth + box.background.paddingX * 2
+  );
+  const rectWidth = Math.min(maxWidthPx, desiredWidth);
   const rectHeight = fontSize * box.lineHeight + box.background.paddingY * 2;
+  const rectRadius = Math.min(box.background.radius, rectHeight / 2);
   const left =
     box.align === "center"
       ? anchorX - rectWidth / 2
       : box.align === "right"
         ? anchorX - rectWidth
         : getBoxLeft(box, canvasWidth);
-  const rect = `<rect x="${left.toFixed(1)}" y="${top.toFixed(1)}" width="${rectWidth.toFixed(1)}" height="${rectHeight.toFixed(1)}" rx="${box.background.radius}" fill="${escapeXml(box.background.color)}" />`;
+  const rect = `<rect x="${left.toFixed(1)}" y="${top.toFixed(1)}" width="${rectWidth.toFixed(1)}" height="${rectHeight.toFixed(1)}" rx="${rectRadius.toFixed(1)}" fill="${escapeXml(box.background.color)}" />`;
   const ctaY = top + box.background.paddingY + fontSize * 0.82;
-  const ctaText = `<text x="${(left + rectWidth / 2).toFixed(1)}" y="${ctaY.toFixed(1)}" text-anchor="middle" font-family="${escapedFont}" font-size="${fontSize}" font-weight="${box.fontWeight}" fill="${escapeXml(box.color)}">${escapeXml(lines[0] ?? "")}</text>`;
+  const ctaText = `<text x="${(left + rectWidth / 2).toFixed(1)}" y="${ctaY.toFixed(1)}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontSize}" font-weight="${box.fontWeight}" fill="${escapeXml(box.color)}">${escapeXml(lines[0] ?? "")}</text>`;
   return `${rect}${ctaText}`;
 }
 
@@ -207,7 +220,9 @@ function renderOverlaySvg(
     )
     .join("");
 
-  return `<svg width="${canvasWidth}" height="${canvasHeight}" viewBox="0 0 ${canvasWidth} ${canvasHeight}" xmlns="http://www.w3.org/2000/svg">${defs}${overlay}${fields}</svg>`;
+  const fontStyle = `<style>@font-face{font-family:PosterCJK;src:url("${POSTER_FONT_URL}") format("opentype");}</style>`;
+
+  return `<svg width="${canvasWidth}" height="${canvasHeight}" viewBox="0 0 ${canvasWidth} ${canvasHeight}" xmlns="http://www.w3.org/2000/svg">${fontStyle}${defs}${overlay}${fields}</svg>`;
 }
 
 export async function POST(request: Request) {
@@ -261,4 +276,3 @@ export async function POST(request: Request) {
     return errorResponse(error, { userId, feature: "poster-render" });
   }
 }
-

@@ -435,14 +435,16 @@ export default function ImageGenerator() {
                   ))}
                 </div>
 
-                <PosterEditor
-                  imageUrl={generatedImage}
-                  template={selectedPosterTemplate}
-                  values={posterText}
-                  onChange={handlePosterTextChange}
-                />
+                <div className="mx-auto max-w-xl">
+                  <PosterEditor
+                    imageUrl={generatedImage}
+                    template={selectedPosterTemplate}
+                    values={posterText}
+                    onChange={handlePosterTextChange}
+                  />
+                </div>
 
-                <div className="mt-4 flex flex-wrap items-center gap-3">
+                <div className="mx-auto mt-4 flex max-w-xl flex-wrap items-center justify-end gap-3">
                   <button
                     type="button"
                     onClick={handleRenderPoster}
@@ -463,7 +465,7 @@ export default function ImageGenerator() {
                 </div>
 
                 {finalPosterImage && (
-                  <div className="mt-6">
+                  <div className="mx-auto mt-6 max-w-xl">
                     <h3 className="mb-3 text-base font-semibold text-gray-900">
                       最终海报
                     </h3>
@@ -575,13 +577,22 @@ function PosterInlineTextInput({
   } as const;
 
   if (field === "cta") {
+    const justifyContent =
+      box.align === "left"
+        ? "flex-start"
+        : box.align === "right"
+          ? "flex-end"
+          : "center";
     return (
-      <div className="absolute" style={commonStyle}>
+      <div
+        className="absolute flex"
+        style={{ ...commonStyle, justifyContent }}
+      >
         <input
           value={value}
           onChange={(event) => onChange(event.target.value)}
           aria-label="CTA"
-          className={`w-full rounded-full border bg-transparent px-[1.35em] py-[0.65em] text-center outline-none transition focus:border-white/80 ${
+          className={`min-w-[7.5em] max-w-full rounded-full border bg-transparent px-[1.35em] py-[0.65em] text-center outline-none transition focus:border-white/80 ${
             tooLong ? "border-red-400" : "border-transparent"
           }`}
           style={{
