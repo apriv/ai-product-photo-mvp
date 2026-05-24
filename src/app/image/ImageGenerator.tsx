@@ -11,6 +11,7 @@ import {
 } from "@/lib/image-compression";
 import { imageTemplates, getImageTemplate } from "@/features/image/templates";
 import { posterFontClassName } from "@/features/poster/fonts";
+import { renderPosterToDataUrl } from "@/features/poster/renderer";
 import {
   defaultPosterText,
   getDefaultPosterText,
@@ -208,17 +209,17 @@ export default function ImageGenerator() {
   };
 
   const handleRenderPoster = async () => {
-    if (!generatedImage || !posterEditorRef.current) return;
+    if (!generatedImage) return;
 
     setPosterRendering(true);
     setErrorMessage("");
 
     try {
-      if (document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur();
-      }
-      await new Promise((resolve) => window.requestAnimationFrame(resolve));
-      const imageUrl = await exportElementToPng(posterEditorRef.current);
+      const imageUrl = await renderPosterToDataUrl({
+        imageUrl: generatedImage,
+        template: selectedPosterTemplate,
+        values: posterText,
+      });
       setFinalPosterImage(imageUrl);
     } catch (error) {
       debug.error("Poster render failed", {
@@ -635,152 +636,6 @@ function copyComputedStyle(source: Element, target: HTMLElement) {
   }
 }
 
-function inlineComputedStyles(source: Element, target: Element) {
-  if (target instanceof HTMLElement) {
-    copyComputedStyle(source, target);
-  }
-
-  const sourceChildren = Array.from(source.children);
-  const targetChildren = Array.from(target.children);
-  sourceChildren.forEach((sourceChild, index) => {
-    const targetChild = targetChildren[index];
-    if (targetChild) inlineComputedStyles(sourceChild, targetChild);
-  });
-}
-
-function replaceEditableControls(sourceRoot: HTMLElement, cloneRoot: HTMLElement) {
-  const sourceControls = Array.from(
-    sourceRoot.querySelectorAll("input, textarea")
-  ) as Array<HTMLInputElement | HTMLTextAreaElement>;
-  const cloneControls = Array.from(
-    cloneRoot.querySelectorAll("input, textarea")
-  ) as Array<HTMLInputElement | HTMLTextAreaElement>;
-
-  sourceControls.forEach((sourceControl, index) => {
-    const cloneControl = cloneControls[index];
-    if (!cloneControl || !cloneControl.parentElement) return;
-
-    const replacement = document.createElement("div");
-    copyComputedStyle(sourceControl, replacement);
-    replacement.textContent = sourceControl.value;
-    replacement.style.boxSizing = "border-box";
-    replacement.style.outline = "none";
-    replacement.style.caretColor = "transparent";
-
-    if (sourceControl instanceof HTMLTextAreaElement) {
-      replacement.style.whiteSpace = "pre-wrap";
-      replacement.style.overflow = "hidden";
-    } else {
-      replacement.style.display = "flex";
-      replacement.style.alignItems = "center";
-      replacement.style.justifyContent = "center";
-      replacement.style.whiteSpace = "nowrap";
-    }
-
-    cloneControl.parentElement.replaceChild(replacement, cloneControl);
-  });
-}
-
-async function waitForImages(root: HTMLElement) {
-  const images = Array.from(root.querySelectorAll("img"));
-  await Promise.all(
-    images.map((image) => {
-      if (image.complete && image.naturalWidth > 0) return Promise.resolve();
-      return new Promise<void>((resolve, reject) => {
-        image.onload = () => resolve();
-        image.onerror = () => reject(new Error("图片加载失败"));
-      });
-    })
-  );
-}
-
-async function exportElementToPng(element: HTMLElement) {
-  await document.fonts.ready;
-  await waitForImages(element);
-
-  const rect = element.getBoundingClientRect();
-  const width = Math.round(rect.width);
-  const height = Math.round(rect.height);
-  if (!width || !height) throw new Error("海报区域尺寸无效");
-
-  const clone = element.cloneNode(true) as HTMLElement;
-  inlineComputedStyles(element, clone);
-  replaceEditableControls(element, clone);
-  clone.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-  clone.style.margin = "0";
-  clone.style.width = `${width}px`;
-  clone.style.height = `${height}px`;
-
-  const serialized = new XMLSerializer().serializeToString(clone);
-  const fontFaceCss = await getEmbeddedFontFaceCss();
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-      <defs><style>${fontFaceCss}</style></defs>
-      <foreignObject width="100%" height="100%">${serialized}</foreignObject>
-    </svg>
-  `;
-  const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-  const image = await loadImage(svgUrl);
-  const scale = Math.max(2, Math.ceil(window.devicePixelRatio || 1));
-  const canvas = document.createElement("canvas");
-  canvas.width = width * scale;
-  canvas.height = height * scale;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("无法创建图片画布");
-  ctx.setTransform(scale, 0, 0, scale, 0, 0);
-  ctx.drawImage(image, 0, 0, width, height);
-  return canvas.toDataURL("image/png");
-}
-
-function loadImage(src: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("海报导出失败"));
-    image.src = src;
-  });
-}
-
-async function getEmbeddedFontFaceCss() {
-  const rules: string[] = [];
-  for (const sheet of Array.from(document.styleSheets)) {
-    try {
-      for (const rule of Array.from(sheet.cssRules)) {
-        if (rule.cssText.includes("@font-face")) {
-          rules.push(rule.cssText);
-        }
-      }
-    } catch {
-      // Cross-origin stylesheets are ignored; next/font rules are same-origin.
-    }
-  }
-
-  const embeddedRules = await Promise.all(
-    rules.map(async (rule) => {
-      const urlMatch = rule.match(/url\((['"]?)([^)'"]+)\1\)/);
-      if (!urlMatch) return rule;
-
-      const fontUrl = new URL(urlMatch[2], window.location.origin).toString();
-      try {
-        const response = await fetch(fontUrl);
-        if (!response.ok) return rule;
-        const blob = await response.blob();
-        const dataUrl = await blobToDataUrl(blob);
-        return rule.replace(/url\((['"]?)([^)'"]+)\1\)/, `url("${dataUrl}")`);
-      } catch {
-        return rule;
-      }
-    })
-  );
-
-  return embeddedRules.join("\n").replace(/]]>/g, "");
-}
-
-function blobToDataUrl(blob: Blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("字体读取失败"));
-    reader.readAsDataURL(blob);
-  });
-}
+// Legacy helper, kept so other code referencing the function name (if any
+// remains) continues to work. The renderer no longer uses it.
+void copyComputedStyle;
