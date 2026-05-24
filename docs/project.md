@@ -8,12 +8,14 @@
 
 ### 图片生成（`/image`）
 
-四个模板，前端选择后调 `/api/image/generate`：
+四个模板，前端选择后调 `/api/image/generate`。每个模板有积分价格，生成成功才扣，失败自动退回：
 
-- **社媒海报** — fal `xai/grok-imagine-image/edit`，生成 Instagram 风格高端海报
-- **白底商品展示图** — 同上模型，换 prompt，生成多角度展示版
-- **仅抠图** — fal `fal-ai/birefnet`，只做背景去除
-- **占位预览** — sharp 生成 SVG placeholder，不调外部 API，用于测试
+- **社媒海报** — fal `xai/grok-imagine-image/edit`，生成 Instagram 风格高端海报（**10 积分**）
+- **白底商品展示图** — 同上模型，换 prompt，生成多角度展示版（**10 积分**）
+- **仅抠图** — fal `fal-ai/birefnet`，只做背景去除（**5 积分**）
+- **占位预览** — sharp 生成 SVG placeholder，不调外部 API，用于测试（**0 积分**）
+
+扣费流程：先 `chargeCredits()` 原子扣费 + 写 ledger → 调 fal → fal 失败时 `refund()` 退回并写 ledger。每次生成（成功/失败）都写一行 `GenerationLog`，用于后续统计成本和成功率。
 
 ### 访问控制
 
@@ -68,6 +70,8 @@ src/
 └── lib/                            # 跨功能共享工具
     ├── auth.ts                     # session + bcrypt + requireUser / requireAdmin
     ├── activation.ts               # 激活码消费 + wallet 更新（事务）
+    ├── credits.ts                  # chargeCredits + 余额/到期校验 + InsufficientCreditsError
+    ├── generation-log.ts           # 写 GenerationLog（成功/失败都写）
     ├── fal-client.ts               # fal.config() 统一入口
     ├── prisma.ts                   # PrismaClient 单例（server-only）
     ├── image-compression.ts        # 浏览器端图片压缩（压到 1MB 内）

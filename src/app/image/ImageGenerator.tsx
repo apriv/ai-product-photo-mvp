@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,7 +9,7 @@ import {
   CompressionInfo,
   formatFileSize,
 } from "@/lib/image-compression";
-import { imageTemplates } from "@/features/image/templates";
+import { imageTemplates, getImageTemplate } from "@/features/image/templates";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -36,6 +36,43 @@ export default function ImageGenerator() {
   const [errorMessage, setErrorMessage] = useState("");
   const [compressionInfo, setCompressionInfo] =
     useState<CompressionInfo | null>(null);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [planExpired, setPlanExpired] = useState(false);
+
+  const fetchWallet = useCallback(async () => {
+    try {
+      const r = await fetch("/api/account/wallet", { cache: "no-store" });
+      if (r.status === 401) {
+        router.replace("/login");
+        return;
+      }
+      const data = await r.json();
+      if (data?.wallet) {
+        setBalance(data.wallet.balance);
+        const expiresAt = data.wallet.planExpiresAt
+          ? new Date(data.wallet.planExpiresAt).getTime()
+          : null;
+        setPlanExpired(
+          Boolean(
+            data.wallet.activePlanId && expiresAt && expiresAt < Date.now()
+          )
+        );
+      }
+    } catch {
+      // ignore — wallet display is non-critical
+    }
+  }, [router]);
+
+  useEffect(() => {
+    const id = window.requestAnimationFrame(() => {
+      fetchWallet();
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [fetchWallet]);
+
+  const selectedCost = getImageTemplate(selectedTemplate)?.cost ?? 0;
+  const insufficient =
+    balance !== null && balance < selectedCost && selectedCost > 0;
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
@@ -110,11 +147,16 @@ export default function ImageGenerator() {
       }
 
       if (!response.ok || !data.success) {
+        // 402 = insufficient credits / plan expired — refresh wallet so UI catches up
+        if (response.status === 402) {
+          fetchWallet();
+        }
         throw new Error(data.error || "生成失败，请重试");
       }
 
       setGeneratedImage(data.imageUrl);
       setStatus("");
+      fetchWallet();
     } catch (error) {
       debug.error("Generate request failed", {
         error: error instanceof Error ? error.message : String(error),
@@ -142,6 +184,25 @@ export default function ImageGenerator() {
           <h1 className="text-3xl font-bold text-gray-900">AI 商品图生成器</h1>
           <Link href="/" className="text-sm text-gray-500 hover:text-black">
             ← 返回首页
+          </Link>
+        </div>
+
+        <div className="mt-3 flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm">
+          <div className="text-gray-600">
+            余额：
+            <span className="font-semibold text-gray-900">
+              {balance === null ? "—" : balance}
+            </span>
+            <span className="ml-1 text-gray-400">积分</span>
+            {planExpired && (
+              <span className="ml-3 text-red-600">套餐已到期</span>
+            )}
+          </div>
+          <Link
+            href="/account"
+            className="text-xs text-gray-500 underline hover:text-black"
+          >
+            激活 / 账户
           </Link>
         </div>
 
@@ -223,7 +284,12 @@ export default function ImageGenerator() {
                     : "border-gray-200 hover:border-black"
               } ${loading ? "opacity-50" : ""}`}
             >
-              <div className="font-medium">{item.name}</div>
+              <div className="flex items-baseline justify-between">
+                <div className="font-medium">{item.name}</div>
+                <div className="text-xs text-gray-500">
+                  {item.cost === 0 ? "免费" : `${item.cost} 积分`}
+                </div>
+              </div>
               <div className="mt-1 text-sm opacity-70">{item.desc}</div>
             </button>
           ))}
@@ -232,15 +298,38 @@ export default function ImageGenerator() {
         <div className="mt-4 text-sm text-gray-500">
           当前选择：
           <span className="font-medium text-gray-900">{selectedTemplate}</span>
+          {selectedCost > 0 && (
+            <span className="ml-2 text-gray-500">
+              · 本次将扣 {selectedCost} 积分
+            </span>
+          )}
         </div>
 
-        <button
-          onClick={handleGenerate}
-          disabled={!file || loading}
-          className="mt-8 w-full rounded-xl bg-black py-3 font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-300"
-        >
-          {loading ? `${status || "处理中..."}` : "生成商品图"}
-        </button>
+        {insufficient ? (
+          <div className="mt-8 flex items-center justify-between rounded-xl border border-yellow-300 bg-yellow-50 px-5 py-4 text-sm text-yellow-800">
+            <div>
+              积分不足（剩余 {balance}，需要 {selectedCost}）
+            </div>
+            <Link
+              href="/account"
+              className="rounded-lg bg-black px-4 py-2 text-white"
+            >
+              去激活
+            </Link>
+          </div>
+        ) : (
+          <button
+            onClick={handleGenerate}
+            disabled={!file || loading || planExpired}
+            className="mt-8 w-full rounded-xl bg-black py-3 font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+          >
+            {loading
+              ? `${status || "处理中..."}`
+              : planExpired
+                ? "套餐已到期，请先激活"
+                : "生成商品图"}
+          </button>
+        )}
 
         {generatedImage && (
           <div className="mt-8">

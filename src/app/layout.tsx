@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "电商商品图助手",
+  title: "自媒体大王",
   description:
-    "基于 AI 的图片处理工具，帮助电商卖家快速生成高质量的商品主图和详情图。",
+    "基于 AI 的商品图片视频处理工具，帮助电商卖家快速生成高质量的商品自媒体素材。",
 };
 
 export default function RootLayout({

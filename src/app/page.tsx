@@ -20,7 +20,7 @@ export default function Home() {
     <main className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="mx-auto max-w-3xl">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">电商 AI 助手</h1>
+          <h1 className="text-3xl font-bold text-gray-900">自媒体大王</h1>
           <Link href="/account" className="text-sm text-gray-500 hover:text-black">
             账户 →
           </Link>
