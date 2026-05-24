@@ -26,7 +26,7 @@ export default async function AdminHome() {
         <Card label="累计生成次数" value={generationCount} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <Link
           href="/admin/users"
           className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:border-black"
@@ -41,6 +41,15 @@ export default async function AdminHome() {
           <div className="text-lg font-medium text-gray-900">激活码管理</div>
           <div className="mt-2 text-sm text-gray-600">
             生成、查看、导出 CSV
+          </div>
+        </Link>
+        <Link
+          href="/admin/stats"
+          className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:border-black"
+        >
+          <div className="text-lg font-medium text-gray-900">统计</div>
+          <div className="mt-2 text-sm text-gray-600">
+            用量、成功率、按模板/用户分布
           </div>
         </Link>
       </div>

@@ -248,3 +248,20 @@ pm2 restart ai-product-photo
 
 权限说明：所有 `/api/admin/*` 都通过 `requireAdmin()` 拦截，普通用户访问会 403；
 `/admin` 页面通过 server-side `getCurrentUser()` 拦截，未登录跳 `/login`，登录但不是 admin 跳首页。
+
+
+---
+# 服务器部署：统计面板（Step 6）
+
+新增 `/admin/stats` 页 + `GET /api/admin/stats` 聚合接口。
+读 `GenerationLog` 实时计算，无额外存储 / 无数据库迁移。
+
+```bash
+git pull
+npm install
+npm run build
+pm2 restart ai-product-photo
+```
+
+部署完后用 admin 登录，`/admin/stats` 应看到 4 个汇总卡 + 按模板表 + 按用户 Top 20。
+如果当前区间没数据会显示"暂无数据"——`GenerationLog` 是 Step 3 才开始写的，老服务器上线后用户实际生成才有数。

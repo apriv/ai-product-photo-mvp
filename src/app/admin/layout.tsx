@@ -26,6 +26,9 @@ export default async function AdminLayout({
               <Link href="/admin/codes" className="hover:text-black">
                 激活码
               </Link>
+              <Link href="/admin/stats" className="hover:text-black">
+                统计
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4 text-sm text-gray-500">

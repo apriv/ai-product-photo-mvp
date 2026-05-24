@@ -33,6 +33,7 @@
 - `/admin` — 概览（用户总数、未/已使用激活码、累计生成次数）
 - `/admin/users` — 用户列表、按用户名搜索、调整余额（必填原因，写 `ADMIN_ADJUST` ledger）
 - `/admin/codes` — 激活码列表（按状态 UNUSED/USED/DISABLED 切换）、批量生成、复制、导出 CSV
+- `/admin/stats` — 统计面板：成功/失败总数、成功率、按模板拆分、按用户 Top 20。时间窗口可选 1d / 7d / 30d / 全部。基于 `GenerationLog` 聚合，无额外存储
 
 ### 视频生成（`/video`）
 
@@ -63,7 +64,8 @@ src/
 │   ├── admin/                      # 仅 ADMIN 可见：layout.tsx 拦截非管理员
 │   │   ├── page.tsx                # 概览
 │   │   ├── users/page.tsx          # 用户列表 + 调额度
-│   │   └── codes/page.tsx          # 激活码列表 + 批量生成 + 导出 CSV
+│   │   ├── codes/page.tsx          # 激活码列表 + 批量生成 + 导出 CSV
+│   │   └── stats/page.tsx          # 统计面板（用量/成功率/Top 用户）
 │   ├── image/
 │   │   ├── page.tsx                # /image 路由入口
 │   │   └── ImageGenerator.tsx      # 客户端组件，承载所有交互
@@ -75,6 +77,7 @@ src/
 │       ├── admin/users/[id]/adjust/route.ts      # POST 调额
 │       ├── admin/codes/route.ts                  # GET 列表 / POST 生成
 │       ├── admin/plans/route.ts                  # GET 套餐
+│       ├── admin/stats/route.ts                  # GET 聚合统计（range=1d/7d/30d/all）
 │       └── image/generate/route.ts # POST /api/image/generate — 图片生成
 │
 ├── features/                       # 按业务功能拆分的领域配置
