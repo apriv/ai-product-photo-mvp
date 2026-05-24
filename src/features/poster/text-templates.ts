@@ -1,3 +1,5 @@
+import { posterFontFamilies } from "@/features/poster/fonts";
+
 export type PosterTemplateId =
   | "editorial"
   | "studio-pop"
@@ -51,16 +53,11 @@ export const defaultPosterText: PosterTextValues = {
   cta: "Discover",
 };
 
-const BODY =
-  "var(--font-poster-body), Inter, Noto Sans SC, PingFang SC, Microsoft YaHei, system-ui, sans-serif";
-const EDITORIAL =
-  "var(--font-poster-editorial), Fraunces, Georgia, Noto Sans SC, PingFang SC, Microsoft YaHei, serif";
-const STUDIO =
-  "var(--font-poster-studio), Impact, Arial Narrow, Noto Sans SC, PingFang SC, Microsoft YaHei, sans-serif";
-const STREET =
-  "var(--font-poster-street), Caveat, Noto Sans SC, PingFang SC, Microsoft YaHei, cursive";
-const SOFT =
-  "var(--font-poster-soft), Fraunces, Noto Sans SC, PingFang SC, Microsoft YaHei, cursive";
+const BODY = posterFontFamilies.body;
+const EDITORIAL = posterFontFamilies.editorial;
+const STUDIO = posterFontFamilies.studio;
+const STREET = posterFontFamilies.street;
+const SOFT = posterFontFamilies.soft;
 
 export const posterTextTemplates: PosterTextTemplate[] = [
   {

@@ -1,13 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import {
-  Bebas_Neue,
-  Caveat,
-  Permanent_Marker,
-  Playfair_Display,
-  Space_Grotesk,
-} from "next/font/google";
 import { useDropzone } from "react-dropzone";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,6 +10,7 @@ import {
   formatFileSize,
 } from "@/lib/image-compression";
 import { imageTemplates, getImageTemplate } from "@/features/image/templates";
+import { posterFontClassName } from "@/features/poster/fonts";
 import {
   defaultPosterText,
   getDefaultPosterText,
@@ -32,44 +26,6 @@ import {
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const POSTER_TEMPLATE_NAME = "社媒海报";
 const TITLE_TEMPLATE_NAME = "添加标题";
-
-const playfairDisplay = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["700", "900"],
-  variable: "--font-poster-editorial",
-  display: "swap",
-});
-const bebasNeue = Bebas_Neue({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-poster-studio",
-  display: "swap",
-});
-const permanentMarker = Permanent_Marker({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-poster-street",
-  display: "swap",
-});
-const caveat = Caveat({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  variable: "--font-poster-soft",
-  display: "swap",
-});
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-poster-body",
-  display: "swap",
-});
-const posterFontClassName = [
-  playfairDisplay.variable,
-  bebasNeue.variable,
-  permanentMarker.variable,
-  caveat.variable,
-  spaceGrotesk.variable,
-].join(" ");
 
 const debug = {
   log: (label: string, data?: unknown) => {
