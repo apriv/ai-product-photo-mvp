@@ -1,6 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import {
+  Bebas_Neue,
+  Caveat,
+  Permanent_Marker,
+  Playfair_Display,
+  Space_Grotesk,
+} from "next/font/google";
 import { useDropzone } from "react-dropzone";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,6 +19,7 @@ import {
 import { imageTemplates, getImageTemplate } from "@/features/image/templates";
 import {
   defaultPosterText,
+  getDefaultPosterText,
   getPosterFontSize,
   isPosterTextTooLong,
   posterTextTemplates,
@@ -24,6 +32,44 @@ import {
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const POSTER_TEMPLATE_NAME = "社媒海报";
 const TITLE_TEMPLATE_NAME = "添加标题";
+
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["700", "900"],
+  variable: "--font-poster-editorial",
+  display: "swap",
+});
+const bebasNeue = Bebas_Neue({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-poster-studio",
+  display: "swap",
+});
+const permanentMarker = Permanent_Marker({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-poster-street",
+  display: "swap",
+});
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-poster-soft",
+  display: "swap",
+});
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-poster-body",
+  display: "swap",
+});
+const posterFontClassName = [
+  playfairDisplay.variable,
+  bebasNeue.variable,
+  permanentMarker.variable,
+  caveat.variable,
+  spaceGrotesk.variable,
+].join(" ");
 
 const debug = {
   log: (label: string, data?: unknown) => {
@@ -53,7 +99,7 @@ export default function ImageGenerator() {
   const [balance, setBalance] = useState<number | null>(null);
   const [planExpired, setPlanExpired] = useState(false);
   const [posterTemplateId, setPosterTemplateId] =
-    useState<PosterTemplateId>("minimal");
+    useState<PosterTemplateId>("editorial");
   const [posterText, setPosterText] =
     useState<PosterTextValues>(defaultPosterText);
   const [posterRendering, setPosterRendering] = useState(false);
@@ -176,7 +222,7 @@ export default function ImageGenerator() {
 
       setGeneratedImage(data.imageUrl);
       setFinalPosterImage(null);
-      setPosterText(defaultPosterText);
+      setPosterText(getDefaultPosterText(posterTemplateId));
       setStatus("");
       fetchWallet();
     } catch (error) {
@@ -238,7 +284,7 @@ export default function ImageGenerator() {
   });
 
   return (
-    <main className="min-h-screen bg-gray-50 px-6 py-10">
+    <main className={`min-h-screen bg-gray-50 px-6 py-10 ${posterFontClassName}`}>
       <div className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">AI 商品图生成器</h1>
@@ -408,6 +454,7 @@ export default function ImageGenerator() {
                       type="button"
                       onClick={() => {
                         setPosterTemplateId(template.id);
+                        setPosterText(template.defaultText);
                         setFinalPosterImage(null);
                       }}
                       className={`rounded-xl border p-3 text-left transition ${
@@ -569,6 +616,13 @@ function PosterInlineTextInput({
     textAlign: box.align,
     textTransform: box.uppercase ? "uppercase" : undefined,
     textShadow: box.shadow,
+    transform: box.rotate ? `rotate(${box.rotate}deg)` : undefined,
+    transformOrigin:
+      box.align === "right"
+        ? "100% 50%"
+        : box.align === "center"
+          ? "50% 50%"
+          : "0 50%",
   } as const;
 
   if (field === "cta") {
@@ -702,8 +756,10 @@ async function exportElementToPng(element: HTMLElement) {
   clone.style.height = `${height}px`;
 
   const serialized = new XMLSerializer().serializeToString(clone);
+  const fontFaceCss = getFontFaceCss();
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+      <defs><style>${fontFaceCss}</style></defs>
       <foreignObject width="100%" height="100%">${serialized}</foreignObject>
     </svg>
   `;
@@ -727,4 +783,25 @@ function loadImage(src: string) {
     image.onerror = () => reject(new Error("海报导出失败"));
     image.src = src;
   });
+}
+
+function getFontFaceCss() {
+  let css = "";
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      for (const rule of Array.from(sheet.cssRules)) {
+        if (rule.cssText.includes("@font-face")) {
+          css += `${rule.cssText}\n`;
+        }
+      }
+    } catch {
+      // Cross-origin stylesheets are ignored; next/font rules are same-origin.
+    }
+  }
+  return css
+    .replace(/]]>/g, "")
+    .replace(
+      /url\((['"]?)(\/[^)'"]+)\1\)/g,
+      `url("${window.location.origin}$2")`
+    );
 }

@@ -1,4 +1,8 @@
-export type PosterTemplateId = "minimal" | "luxury" | "tech" | "social";
+export type PosterTemplateId =
+  | "editorial"
+  | "studio-pop"
+  | "street-note"
+  | "soft-social";
 export type PosterTextField = "title" | "subtitle" | "cta";
 export type TextAlign = "left" | "center" | "right";
 
@@ -18,6 +22,7 @@ export type PosterTextBox = {
   maxLines: number;
   letterSpacing?: number;
   uppercase?: boolean;
+  rotate?: number;
   shadow?: string;
   background?: {
     color: string;
@@ -31,6 +36,7 @@ export type PosterTextTemplate = {
   id: PosterTemplateId;
   name: string;
   desc: string;
+  defaultText: PosterTextValues;
   fields: Record<PosterTextField, PosterTextBox>;
   overlay?: {
     kind: "bottom-gradient";
@@ -40,61 +46,76 @@ export type PosterTextTemplate = {
 };
 
 export const defaultPosterText: PosterTextValues = {
-  title: "New Arrival",
-  subtitle: "Premium product photography",
-  cta: "Shop Now",
+  title: "Quiet Luxury",
+  subtitle: "A refined everyday essential",
+  cta: "Discover",
 };
 
-const SANS = "Arial, Helvetica, sans-serif";
-const SERIF = "Georgia, Times New Roman, serif";
-const HEAVY = "Arial Black, Arial, Helvetica, sans-serif";
+const BODY =
+  "var(--font-poster-body), Inter, Noto Sans SC, PingFang SC, Microsoft YaHei, system-ui, sans-serif";
+const EDITORIAL =
+  "var(--font-poster-editorial), Fraunces, Georgia, Noto Sans SC, PingFang SC, Microsoft YaHei, serif";
+const STUDIO =
+  "var(--font-poster-studio), Impact, Arial Narrow, Noto Sans SC, PingFang SC, Microsoft YaHei, sans-serif";
+const STREET =
+  "var(--font-poster-street), Caveat, Noto Sans SC, PingFang SC, Microsoft YaHei, cursive";
+const SOFT =
+  "var(--font-poster-soft), Fraunces, Noto Sans SC, PingFang SC, Microsoft YaHei, cursive";
 
 export const posterTextTemplates: PosterTextTemplate[] = [
   {
-    id: "minimal",
-    name: "简洁",
-    desc: "留白多，信息克制，适合多数日常商品",
+    id: "editorial",
+    name: "Editorial",
+    desc: "高级杂志感，适合美妆、香水、饰品",
+    defaultText: {
+      title: "Quiet Luxury",
+      subtitle: "A refined everyday essential",
+      cta: "Discover",
+    },
     fields: {
       title: {
         x: 50,
-        y: 9,
-        width: 78,
+        y: 8,
+        width: 82,
         align: "center",
-        color: "#111827",
-        fontFamily: SANS,
-        fontWeight: 800,
-        maxFontSize: 72,
-        minFontSize: 34,
-        lineHeight: 1.03,
+        color: "#fff7ed",
+        fontFamily: EDITORIAL,
+        fontWeight: 900,
+        maxFontSize: 78,
+        minFontSize: 36,
+        lineHeight: 0.96,
         maxLines: 2,
+        shadow: "0 4px 22px rgba(0,0,0,0.42)",
       },
       subtitle: {
         x: 50,
-        y: 18,
-        width: 70,
+        y: 20,
+        width: 74,
         align: "center",
-        color: "#374151",
-        fontFamily: SANS,
-        fontWeight: 500,
-        maxFontSize: 28,
-        minFontSize: 18,
-        lineHeight: 1.2,
+        color: "#fff1dc",
+        fontFamily: BODY,
+        fontWeight: 600,
+        maxFontSize: 24,
+        minFontSize: 15,
+        lineHeight: 1.22,
         maxLines: 2,
+        letterSpacing: 0.6,
+        shadow: "0 2px 12px rgba(0,0,0,0.38)",
       },
       cta: {
         x: 50,
         y: 83,
-        width: 36,
+        width: 38,
         align: "center",
-        color: "#ffffff",
-        fontFamily: SANS,
-        fontWeight: 700,
-        maxFontSize: 24,
+        color: "#fff7ed",
+        fontFamily: BODY,
+        fontWeight: 800,
+        maxFontSize: 21,
         minFontSize: 16,
         lineHeight: 1,
         maxLines: 1,
         background: {
-          color: "#111827",
+          color: "rgba(17,24,39,0.88)",
           paddingX: 26,
           paddingY: 14,
           radius: 999,
@@ -103,52 +124,120 @@ export const posterTextTemplates: PosterTextTemplate[] = [
     },
   },
   {
-    id: "luxury",
-    name: "奢华",
-    desc: "杂志感、精致，适合美妆、饰品和高客单价商品",
+    id: "studio-pop",
+    name: "Studio Pop",
+    desc: "年轻品牌感，适合服饰、宠物用品、潮玩",
+    defaultText: {
+      title: "Fresh Drop",
+      subtitle: "Made for your daily rotation",
+      cta: "Shop the edit",
+    },
     fields: {
       title: {
         x: 8,
-        y: 64,
-        width: 62,
+        y: 60,
+        width: 66,
         align: "left",
-        color: "#fbf7ef",
-        fontFamily: SERIF,
-        fontWeight: 700,
-        maxFontSize: 66,
-        minFontSize: 32,
-        lineHeight: 1.02,
+        color: "#ffffff",
+        fontFamily: STUDIO,
+        fontWeight: 400,
+        maxFontSize: 82,
+        minFontSize: 36,
+        lineHeight: 0.92,
         maxLines: 2,
-        shadow: "0 3px 14px rgba(0,0,0,0.35)",
+        uppercase: true,
+        letterSpacing: 0.4,
+        shadow: "0 4px 18px rgba(0,0,0,0.42)",
       },
       subtitle: {
         x: 8,
-        y: 74,
-        width: 58,
+        y: 73,
+        width: 62,
         align: "left",
-        color: "#f6ead4",
-        fontFamily: SANS,
-        fontWeight: 500,
-        maxFontSize: 25,
+        color: "#f8fafc",
+        fontFamily: BODY,
+        fontWeight: 650,
+        maxFontSize: 24,
         minFontSize: 16,
+        lineHeight: 1.18,
+        maxLines: 2,
+        shadow: "0 2px 12px rgba(0,0,0,0.38)",
+      },
+      cta: {
+        x: 8,
+        y: 84,
+        width: 44,
+        align: "left",
+        color: "#ffffff",
+        fontFamily: BODY,
+        fontWeight: 850,
+        maxFontSize: 20,
+        minFontSize: 15,
+        lineHeight: 1,
+        maxLines: 1,
+        background: {
+          color: "#f05f57",
+          paddingX: 22,
+          paddingY: 13,
+          radius: 10,
+        },
+      },
+    },
+  },
+  {
+    id: "street-note",
+    name: "Street Note",
+    desc: "涂鸦贴纸感，适合潮牌、运动、促销",
+    defaultText: {
+      title: "Just Landed",
+      subtitle: "Limited vibe, everyday use",
+      cta: "Grab it",
+    },
+    fields: {
+      title: {
+        x: 90,
+        y: 10,
+        width: 62,
+        align: "right",
+        color: "#ffffff",
+        fontFamily: STREET,
+        fontWeight: 400,
+        maxFontSize: 68,
+        minFontSize: 32,
+        lineHeight: 0.94,
+        maxLines: 2,
+        rotate: -3,
+        shadow: "3px 3px 0 rgba(225,29,72,0.95), 0 4px 16px rgba(0,0,0,0.4)",
+      },
+      subtitle: {
+        x: 90,
+        y: 24,
+        width: 58,
+        align: "right",
+        color: "#f8fafc",
+        fontFamily: BODY,
+        fontWeight: 750,
+        maxFontSize: 22,
+        minFontSize: 15,
         lineHeight: 1.18,
         maxLines: 2,
         shadow: "0 2px 10px rgba(0,0,0,0.35)",
       },
       cta: {
-        x: 8,
+        x: 90,
         y: 84,
-        width: 34,
-        align: "left",
-        color: "#2d2115",
-        fontFamily: SANS,
-        fontWeight: 800,
-        maxFontSize: 22,
-        minFontSize: 15,
+        width: 40,
+        align: "right",
+        color: "#111827",
+        fontFamily: STUDIO,
+        fontWeight: 900,
+        maxFontSize: 24,
+        minFontSize: 14,
         lineHeight: 1,
         maxLines: 1,
+        uppercase: true,
         background: {
-          color: "#f6d487",
+          color: "#f8fafc",
           paddingX: 24,
           paddingY: 13,
           radius: 999,
@@ -157,94 +246,43 @@ export const posterTextTemplates: PosterTextTemplate[] = [
     },
   },
   {
-    id: "tech",
-    name: "科技感",
-    desc: "干净利落，适合数码、小家电和工具类商品",
-    fields: {
-      title: {
-        x: 92,
-        y: 11,
-        width: 58,
-        align: "right",
-        color: "#e6fbff",
-        fontFamily: HEAVY,
-        fontWeight: 900,
-        maxFontSize: 60,
-        minFontSize: 30,
-        lineHeight: 1,
-        maxLines: 2,
-        uppercase: true,
-        shadow: "0 2px 12px rgba(0,0,0,0.45)",
-      },
-      subtitle: {
-        x: 92,
-        y: 22,
-        width: 52,
-        align: "right",
-        color: "#b9f2ff",
-        fontFamily: SANS,
-        fontWeight: 600,
-        maxFontSize: 24,
-        minFontSize: 15,
-        lineHeight: 1.18,
-        maxLines: 2,
-        shadow: "0 2px 10px rgba(0,0,0,0.35)",
-      },
-      cta: {
-        x: 92,
-        y: 32,
-        width: 34,
-        align: "right",
-        color: "#021014",
-        fontFamily: SANS,
-        fontWeight: 900,
-        maxFontSize: 21,
-        minFontSize: 14,
-        lineHeight: 1,
-        maxLines: 1,
-        uppercase: true,
-        background: {
-          color: "#67e8f9",
-          paddingX: 22,
-          paddingY: 12,
-          radius: 6,
-        },
-      },
+    id: "soft-social",
+    name: "Soft Social",
+    desc: "温柔生活方式感，适合宠物、家居、食品",
+    defaultText: {
+      title: "Little Joys",
+      subtitle: "Soft details for everyday moments",
+      cta: "Take a look",
     },
-  },
-  {
-    id: "social",
-    name: "网感",
-    desc: "社媒促销感强，文字醒目，适合小红书/Instagram/TikTok",
     overlay: {
       kind: "bottom-gradient",
       from: "rgba(0,0,0,0)",
-      to: "rgba(0,0,0,0.68)",
+      to: "rgba(44,34,30,0.62)",
     },
     fields: {
       title: {
         x: 50,
-        y: 68,
+        y: 67,
         width: 82,
         align: "center",
-        color: "#ffffff",
-        fontFamily: HEAVY,
-        fontWeight: 900,
-        maxFontSize: 70,
-        minFontSize: 32,
-        lineHeight: 1,
+        color: "#fff7ed",
+        fontFamily: SOFT,
+        fontWeight: 700,
+        maxFontSize: 78,
+        minFontSize: 34,
+        lineHeight: 0.95,
         maxLines: 2,
-        shadow: "0 3px 16px rgba(0,0,0,0.5)",
+        shadow: "0 3px 14px rgba(0,0,0,0.38)",
       },
       subtitle: {
         x: 50,
         y: 78,
         width: 76,
         align: "center",
-        color: "#f3f4f6",
-        fontFamily: SANS,
+        color: "#fef3e2",
+        fontFamily: BODY,
         fontWeight: 600,
-        maxFontSize: 26,
+        maxFontSize: 24,
         minFontSize: 16,
         lineHeight: 1.18,
         maxLines: 2,
@@ -253,18 +291,18 @@ export const posterTextTemplates: PosterTextTemplate[] = [
       cta: {
         x: 50,
         y: 88,
-        width: 42,
+        width: 44,
         align: "center",
-        color: "#111827",
-        fontFamily: SANS,
-        fontWeight: 900,
-        maxFontSize: 24,
+        color: "#2f3a31",
+        fontFamily: BODY,
+        fontWeight: 800,
+        maxFontSize: 21,
         minFontSize: 15,
         lineHeight: 1,
         maxLines: 1,
         background: {
-          color: "#ffffff",
-          paddingX: 28,
+          color: "#f7ead7",
+          paddingX: 26,
           paddingY: 13,
           radius: 999,
         },
@@ -275,6 +313,10 @@ export const posterTextTemplates: PosterTextTemplate[] = [
 
 export function getPosterTextTemplate(id: string) {
   return posterTextTemplates.find((template) => template.id === id);
+}
+
+export function getDefaultPosterText(id: string): PosterTextValues {
+  return getPosterTextTemplate(id)?.defaultText ?? defaultPosterText;
 }
 
 function textWeight(char: string) {

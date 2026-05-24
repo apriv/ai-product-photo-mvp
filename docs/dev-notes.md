@@ -8,14 +8,13 @@ cd ~/ai-product-photo-mvp
 ```bash
 # 重新构建 PM2
 git pull
-npm install
-npx prisma migrate deploy   # 应用新数据库迁移（如有）
 npm run build
 pm2 restart ai-product-photo
 tail -f /home/ubuntu/.pm2/logs/ai-product-photo-out.log
 ```
 ```bash
 # 删除重启 PM2（ delete + start）
+npx prisma migrate deploy   # 应用新数据库迁移（如有）
 pm2 delete ai-product-photo
 pm2 start npm --name ai-product-photo -- start
 pm2 save
