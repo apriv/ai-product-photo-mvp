@@ -226,3 +226,25 @@ pm2 restart ai-product-photo
 - 数据库 `GenerationLog` 表开始有数据
 
 价格目前硬编码在 `src/features/image/templates.ts`，调价直接改这个文件再 build 即可，不用改数据库。
+
+
+---
+# 服务器部署：管理后台（Step 5）
+
+新增 `/admin/*` 路由（用户管理 + 激活码生成），仅 ADMIN 用户可见。无数据库迁移。
+
+```bash
+git pull
+npm install
+npm run build
+pm2 restart ai-product-photo
+```
+
+部署完后：
+1. 用 admin 账号登录，账户页右上角会出现"管理后台"按钮
+2. `/admin` 看概览
+3. `/admin/codes` 替代 CLI 批量生成激活码（CLI 仍然保留可用，无需手动登录的脚本场景）
+4. `/admin/users` 可以按用户名搜，并通过对话框调额度（必填原因，记入 ledger 的 ADMIN_ADJUST）
+
+权限说明：所有 `/api/admin/*` 都通过 `requireAdmin()` 拦截，普通用户访问会 403；
+`/admin` 页面通过 server-side `getCurrentUser()` 拦截，未登录跳 `/login`，登录但不是 admin 跳首页。

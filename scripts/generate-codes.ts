@@ -2,26 +2,14 @@ import "dotenv/config";
 import { config as loadDotenv } from "dotenv";
 loadDotenv({ path: ".env.local", override: false });
 
-import { randomBytes } from "node:crypto";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { formatActivationCode } from "../src/lib/activation-codes";
 
 function parseArg(name: string) {
   const idx = process.argv.indexOf(`--${name}`);
   if (idx === -1 || idx === process.argv.length - 1) return undefined;
   return process.argv[idx + 1];
-}
-
-// Crockford-style alphabet: no 0/O/1/I/L/U — safe to read aloud and type.
-const ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ";
-
-function randomSegment(len: number) {
-  const bytes = randomBytes(len);
-  let out = "";
-  for (let i = 0; i < len; i++) {
-    out += ALPHABET[bytes[i] % ALPHABET.length];
-  }
-  return out;
 }
 
 async function main() {
@@ -49,8 +37,7 @@ async function main() {
 
     const codes: string[] = [];
     for (let i = 0; i < count; i++) {
-      // Format: <PLAN>-<12 random chars>, e.g. STD-7K3M9XQP2VWN
-      const code = `${plan.id}-${randomSegment(12)}`;
+      const code = formatActivationCode(plan.id);
       await prisma.activationCode.create({
         data: { code, planId: plan.id, note: note ?? null },
       });

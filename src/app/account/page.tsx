@@ -127,12 +127,22 @@ export default function AccountPage() {
                 )}
               </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className="text-sm text-gray-500 underline hover:text-black"
-            >
-              退出登录
-            </button>
+            <div className="flex items-center gap-4 text-sm">
+              {data.user.role === "ADMIN" && (
+                <Link
+                  href="/admin"
+                  className="rounded-lg bg-black px-3 py-1.5 text-white"
+                >
+                  管理后台
+                </Link>
+              )}
+              <button
+                onClick={handleLogout}
+                className="text-gray-500 underline hover:text-black"
+              >
+                退出登录
+              </button>
+            </div>
           </div>
         </section>
 

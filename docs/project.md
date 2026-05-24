@@ -26,6 +26,14 @@
 - 激活码来自外部售卖渠道；通过 `npm run generate-codes -- --plan <ID> --count N` 生成
 - 详细设计见 [`user-management.md`](./user-management.md)
 
+### 管理后台（`/admin`，仅 ADMIN）
+
+`src/app/admin/layout.tsx` 在 server 端做 role 检查，普通用户跳回首页。
+
+- `/admin` — 概览（用户总数、未/已使用激活码、累计生成次数）
+- `/admin/users` — 用户列表、按用户名搜索、调整余额（必填原因，写 `ADMIN_ADJUST` ledger）
+- `/admin/codes` — 激活码列表（按状态 UNUSED/USED/DISABLED 切换）、批量生成、复制、导出 CSV
+
 ### 视频生成（`/video`）
 
 占位页，未实现。注意事项见 [`dev-notes.md`](./dev-notes.md) 的 Todo。
@@ -52,6 +60,10 @@ src/
 │   ├── login/                      # 登录页（公开）
 │   ├── register/                   # 注册页（公开，需激活码）
 │   ├── account/                    # 账户页：余额 / 激活 / 流水
+│   ├── admin/                      # 仅 ADMIN 可见：layout.tsx 拦截非管理员
+│   │   ├── page.tsx                # 概览
+│   │   ├── users/page.tsx          # 用户列表 + 调额度
+│   │   └── codes/page.tsx          # 激活码列表 + 批量生成 + 导出 CSV
 │   ├── image/
 │   │   ├── page.tsx                # /image 路由入口
 │   │   └── ImageGenerator.tsx      # 客户端组件，承载所有交互
@@ -59,6 +71,10 @@ src/
 │   └── api/
 │       ├── auth/{login,logout,register}/route.ts
 │       ├── account/{wallet,activate}/route.ts
+│       ├── admin/users/route.ts                  # GET 列表
+│       ├── admin/users/[id]/adjust/route.ts      # POST 调额
+│       ├── admin/codes/route.ts                  # GET 列表 / POST 生成
+│       ├── admin/plans/route.ts                  # GET 套餐
 │       └── image/generate/route.ts # POST /api/image/generate — 图片生成
 │
 ├── features/                       # 按业务功能拆分的领域配置
@@ -70,6 +86,9 @@ src/
 └── lib/                            # 跨功能共享工具
     ├── auth.ts                     # session + bcrypt + requireUser / requireAdmin
     ├── activation.ts               # 激活码消费 + wallet 更新（事务）
+    ├── activation-codes.ts         # 激活码字符串生成（CLI/Server 共用）
+    ├── admin.ts                    # adminAdjustCredits（事务式，写 ADMIN_ADJUST ledger）
+    ├── api-errors.ts               # 统一 errorResponse：业务异常 → HTTP 状态码
     ├── credits.ts                  # chargeCredits + 余额/到期校验 + InsufficientCreditsError
     ├── generation-log.ts           # 写 GenerationLog（成功/失败都写）
     ├── fal-client.ts               # fal.config() 统一入口
