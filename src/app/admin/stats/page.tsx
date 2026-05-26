@@ -70,7 +70,7 @@ export default function AdminStatsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <PageHeader
-          eyebrow="Admin"
+          eyebrow="管理"
           title="统计"
           description="按时间窗口查看生成成功率、积分消耗、模板和用户分布。"
         />

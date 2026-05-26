@@ -49,7 +49,7 @@ export default function AdminUsersPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <PageHeader
-          eyebrow="Admin"
+          eyebrow="管理"
           title="用户"
           description="查看用户余额、套餐和注册信息，并按需调整积分。"
         />

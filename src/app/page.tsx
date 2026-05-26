@@ -2,33 +2,41 @@ import AppShell from "@/components/app-shell";
 import { Badge, Card, LinkButton, PageHeader } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth";
 
-const modules = [
+const createModules = [
   {
     href: "/create/image",
-    title: "Image Studio",
-    desc: "商品图、海报、白底图和抠图。",
-    status: "Live",
+    title: "图片生成",
+    desc: "上传商品图，生成商品图、海报、白底图或抠图结果。",
+    status: "可用",
     live: true,
   },
   {
     href: "/create/copy",
-    title: "Copy Studio",
-    desc: "广告标题、卖点、CTA 和视频脚本。",
-    status: "Next",
+    title: "文案生成",
+    desc: "生成广告标题、卖点、CTA 和短视频脚本。",
+    status: "待开放",
     live: false,
   },
   {
     href: "/create/video",
-    title: "Video Studio",
-    desc: "从商品图和脚本生成短视频。",
-    status: "Planned",
+    title: "视频生成",
+    desc: "用商品图和脚本生成商品短视频。",
+    status: "待开放",
     live: false,
+  },
+];
+
+const quickLinks = [
+  {
+    href: "/account",
+    title: "账户与积分",
+    desc: "查看余额、套餐状态和最近积分流水。",
+    live: true,
   },
   {
     href: "/assets",
-    title: "Assets",
-    desc: "管理生成过的图片、文案和视频素材。",
-    status: "Planned",
+    title: "素材库",
+    desc: "后续会集中管理图片、文案和视频素材。",
     live: false,
   },
 ];
@@ -43,23 +51,16 @@ export default async function Home() {
     <AppShell initialUser={shellUser}>
       <div className="space-y-6">
         <PageHeader
-          eyebrow="Dashboard"
-          title="内容生成工作台"
-          description="v2 从统一的商用 App 框架开始。先把图片能力放进稳定工作台，再扩展文案、素材和视频。"
-          actions={<LinkButton href="/create/image">New image</LinkButton>}
+          eyebrow="首页"
+          title="今天要生成什么？"
+          description="从商品图开始创建内容。后续文案、素材库和视频功能会沿用同一套工作台。"
+          actions={<LinkButton href="/create/image">生成图片</LinkButton>}
         />
 
-        <div className="grid gap-4 lg:grid-cols-4">
-          <Metric label="当前阶段" value="v2 M0" helper="UI Foundation" />
-          <Metric label="可用模块" value="1" helper="Image Studio" />
-          <Metric label="下一模块" value="Copy" helper="脚本生成前置" />
-          <Metric label="产品形态" value="Studio" helper="商业工作台" />
-        </div>
-
-        <section className="grid gap-4 lg:grid-cols-2">
-          {modules.map((module) => (
+        <section className="grid gap-4 lg:grid-cols-3">
+          {createModules.map((module) => (
             <Card key={module.href} className="p-5">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex min-h-36 flex-col justify-between gap-5">
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-semibold text-gray-950">
@@ -73,18 +74,52 @@ export default async function Home() {
                     {module.desc}
                   </p>
                 </div>
+                <div>
+                  {module.live ? (
+                    <LinkButton href={module.href} tone="secondary">
+                      开始
+                    </LinkButton>
+                  ) : (
+                    <button
+                      disabled
+                      className="inline-flex h-10 cursor-not-allowed items-center justify-center rounded-lg border border-gray-200 px-4 text-sm font-medium text-gray-400"
+                    >
+                      待开放
+                    </button>
+                  )}
+                </div>
+              </div>
+            </Card>
+          ))}
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          {quickLinks.map((item) => (
+            <Card key={item.href} className="p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-base font-semibold text-gray-950">
+                    {item.title}
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-gray-600">
+                    {item.desc}
+                  </p>
+                </div>
+                <Badge tone={item.live ? "success" : "neutral"}>
+                  {item.live ? "可用" : "待开放"}
+                </Badge>
               </div>
               <div className="mt-5">
-                {module.live ? (
-                  <LinkButton href={module.href} tone="secondary">
-                    Open
+                {item.live ? (
+                  <LinkButton href={item.href} tone="ghost">
+                    查看
                   </LinkButton>
                 ) : (
                   <button
                     disabled
-                    className="inline-flex h-10 cursor-not-allowed items-center justify-center rounded-lg border border-gray-200 px-4 text-sm font-medium text-gray-400"
+                    className="inline-flex h-10 cursor-not-allowed items-center justify-center rounded-lg px-4 text-sm font-medium text-gray-400"
                   >
-                    Coming soon
+                    待开放
                   </button>
                 )}
               </div>
@@ -93,23 +128,5 @@ export default async function Home() {
         </section>
       </div>
     </AppShell>
-  );
-}
-
-function Metric({
-  label,
-  value,
-  helper,
-}: {
-  label: string;
-  value: string;
-  helper: string;
-}) {
-  return (
-    <Card className="p-5">
-      <div className="text-sm text-gray-500">{label}</div>
-      <div className="mt-2 text-2xl font-semibold text-gray-950">{value}</div>
-      <div className="mt-1 text-xs text-gray-500">{helper}</div>
-    </Card>
   );
 }

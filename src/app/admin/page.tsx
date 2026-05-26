@@ -20,7 +20,7 @@ export default async function AdminHome() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Admin"
+        eyebrow="管理"
         title="管理概览"
         description="查看用户、激活码和生成调用的核心运营状态。"
       />

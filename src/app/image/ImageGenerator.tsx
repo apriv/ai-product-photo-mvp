@@ -244,8 +244,8 @@ export default function ImageGenerator() {
   return (
     <div className={`space-y-6 ${posterFontClassName}`}>
       <PageHeader
-        eyebrow="Create / Image"
-        title="Image Studio"
+        eyebrow="创建 / 图片"
+        title="图片生成"
         description="上传一张商品照片，生成适合电商使用的商品图、海报、白底图或抠图结果。"
       />
 

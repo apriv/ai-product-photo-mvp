@@ -27,19 +27,19 @@ type NavItem = {
 const createItems: NavItem[] = [
   {
     href: "/create/image",
-    label: "Image",
+    label: "图片生成",
     detail: "商品图 / 海报 / 白底图",
     match: ["/create/image", "/image"],
   },
   {
     href: "/create/copy",
-    label: "Copy",
+    label: "文案生成",
     detail: "广告文案 / 标题 / CTA",
     disabled: true,
   },
   {
     href: "/create/video",
-    label: "Video",
+    label: "视频生成",
     detail: "商品短视频",
     match: ["/create/video", "/video"],
     disabled: true,
@@ -47,17 +47,17 @@ const createItems: NavItem[] = [
 ];
 
 const primaryItems: NavItem[] = [
-  { href: "/", label: "Dashboard", detail: "工作台总览", match: ["/"] },
+  { href: "/", label: "首页", detail: "工作台总览", match: ["/"] },
   ...createItems,
-  { href: "/assets", label: "Assets", detail: "素材与历史", disabled: true },
-  { href: "/account", label: "Account", detail: "余额与套餐" },
+  { href: "/assets", label: "素材库", detail: "素材与历史", disabled: true },
+  { href: "/account", label: "账户", detail: "余额与套餐" },
 ];
 
 const adminItems: NavItem[] = [
-  { href: "/admin", label: "Admin Overview", match: ["/admin"] },
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/codes", label: "Codes" },
-  { href: "/admin/stats", label: "Stats" },
+  { href: "/admin", label: "管理概览", match: ["/admin"] },
+  { href: "/admin/users", label: "用户" },
+  { href: "/admin/codes", label: "激活码" },
+  { href: "/admin/stats", label: "统计" },
 ];
 
 function itemIsActive(item: NavItem, pathname: string) {
@@ -105,7 +105,7 @@ export default function AppShell({
 
   const currentLabel = useMemo(() => {
     const allItems = [...primaryItems, ...adminItems];
-    return allItems.find((item) => itemIsActive(item, pathname))?.label ?? "Studio";
+    return allItems.find((item) => itemIsActive(item, pathname))?.label ?? "工作台";
   }, [pathname]);
 
   async function handleLogout() {
@@ -127,16 +127,16 @@ export default function AppShell({
                 自媒体大王
               </span>
               <span className="block text-xs text-gray-500">
-                Product Content Studio
+                商品内容生成工作台
               </span>
             </span>
           </Link>
         </div>
 
         <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
-          <NavSection title="Workspace" items={primaryItems} pathname={pathname} />
+          <NavSection title="工作区" items={primaryItems} pathname={pathname} />
           {user?.role === "ADMIN" && (
-            <NavSection title="Admin" items={adminItems} pathname={pathname} />
+            <NavSection title="管理" items={adminItems} pathname={pathname} />
           )}
         </nav>
 
@@ -145,17 +145,17 @@ export default function AppShell({
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="truncate text-sm font-medium text-gray-950">
-                  {user?.username ?? "Account"}
+                  {user?.username ?? "账户"}
                 </div>
                 <div className="text-xs text-gray-500">
-                  {wallet ? `${wallet.balance} credits` : "Loading balance"}
+                  {wallet ? `${wallet.balance} 积分` : "余额加载中"}
                 </div>
               </div>
               <button
                 onClick={handleLogout}
                 className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-white hover:text-gray-950"
               >
-                Logout
+                退出
               </button>
             </div>
           </div>
@@ -169,7 +169,7 @@ export default function AppShell({
               <button
                 onClick={() => setMobileMenuOpen(true)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-700 lg:hidden"
-                aria-label="Open navigation"
+                aria-label="打开导航"
               >
                 <span className="text-lg leading-none">=</span>
               </button>
@@ -178,7 +178,7 @@ export default function AppShell({
                   {currentLabel}
                 </div>
                 <div className="hidden text-xs text-gray-500 sm:block">
-                  v2 Commercial Studio
+                  商品内容生成工作台
                 </div>
               </div>
             </div>
@@ -189,14 +189,14 @@ export default function AppShell({
                   href="/account"
                   className="hidden rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 sm:inline-flex"
                 >
-                  {wallet.balance} credits
+                  {wallet.balance} 积分
                 </Link>
               )}
               <Link
                 href="/create/image"
                 className="inline-flex h-10 items-center justify-center rounded-lg bg-gray-950 px-4 text-sm font-medium text-white hover:bg-gray-800"
               >
-                Create
+                创建
               </Link>
             </div>
           </div>
@@ -213,7 +213,7 @@ export default function AppShell({
         <div className="fixed inset-0 z-40 lg:hidden">
           <button
             className="absolute inset-0 bg-gray-950/30"
-            aria-label="Close navigation"
+            aria-label="关闭导航"
             onClick={() => setMobileMenuOpen(false)}
           />
           <div className="absolute inset-y-0 left-0 flex w-80 max-w-[86vw] flex-col bg-white shadow-xl">
@@ -225,13 +225,13 @@ export default function AppShell({
                 onClick={() => setMobileMenuOpen(false)}
                 className="rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-gray-100"
               >
-                Close
+                关闭
               </button>
             </div>
             <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
-              <NavSection title="Workspace" items={primaryItems} pathname={pathname} />
+              <NavSection title="工作区" items={primaryItems} pathname={pathname} />
               {user?.role === "ADMIN" && (
-                <NavSection title="Admin" items={adminItems} pathname={pathname} />
+                <NavSection title="管理" items={adminItems} pathname={pathname} />
               )}
             </nav>
           </div>
@@ -288,7 +288,7 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
           </span>
         )}
       </span>
-      {item.disabled && <span className="text-xs text-gray-400">Soon</span>}
+      {item.disabled && <span className="text-xs text-gray-400">待开放</span>}
     </>
   );
 
@@ -305,10 +305,10 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
 
 function MobileBottomNav({ pathname }: { pathname: string }) {
   const items = [
-    { href: "/", label: "Home", match: ["/"] },
-    { href: "/create/image", label: "Create", match: ["/create", "/image"] },
-    { href: "/assets", label: "Assets", disabled: true },
-    { href: "/account", label: "Account" },
+    { href: "/", label: "首页", match: ["/"] },
+    { href: "/create/image", label: "创建", match: ["/create", "/image"] },
+    { href: "/assets", label: "素材", disabled: true },
+    { href: "/account", label: "账户" },
   ];
 
   return (

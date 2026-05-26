@@ -110,7 +110,7 @@ export default function AccountPage() {
     <AppShell initialUser={data.user}>
       <div className="mx-auto max-w-4xl space-y-6">
         <PageHeader
-          eyebrow="Account"
+          eyebrow="账户"
           title="账户与积分"
           description="查看当前套餐、余额和最近积分流水，也可以激活新的套餐或补充包。"
         />

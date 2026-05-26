@@ -84,7 +84,7 @@ export default function AdminCodesPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <PageHeader
-          eyebrow="Admin"
+          eyebrow="管理"
           title="激活码"
           description="生成、筛选、复制和导出用于外部销售渠道的激活码。"
         />
