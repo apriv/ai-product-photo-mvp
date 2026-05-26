@@ -17,6 +17,7 @@ v2 的方向是把项目从单功能 MVP 升级成商用内容生成工作台：
 - [`roadmap/v2-roadmap.md`](./roadmap/v2-roadmap.md)：v2 版本待办清单。
 - [`releases/v1-mvp.md`](./releases/v1-mvp.md)：v1 MVP 已完成功能和项目说明。
 - [`features/ui-foundation.md`](./features/ui-foundation.md)：v2 UI 基座设计文档。
+- [`features/ui-standard.md`](./features/ui-standard.md)：登录后 App 的 UI 标准。
 - [`features/poster-generation-v1.md`](./features/poster-generation-v1.md)：海报生成 v1 功能文档。
 - [`features/user-management.md`](./features/user-management.md)：用户、激活码、积分系统功能文档。
 - [`operations/deployment-runbook.md`](./operations/deployment-runbook.md)：部署、服务器、PM2、Nginx、数据库操作手册。
@@ -55,13 +56,13 @@ v2 的方向是把项目从单功能 MVP 升级成商用内容生成工作台：
 
 v2 的第一阶段不是继续堆功能，而是统一 UI 框架。
 
-- [ ] 建立统一 App Shell。
-- [ ] 统一桌面端 sidebar + topbar。
-- [ ] 统一移动端 bottom nav 或 sheet menu。
-- [ ] 建 Dashboard。
-- [ ] 重组 Create / Assets / Account / Admin 路由。
-- [ ] 把现有图片功能迁入 Image Studio。
-- [ ] 写 `docs/ui-standard.md`。
+- [x] 建立统一 App Shell。
+- [x] 统一桌面端 sidebar + topbar。
+- [x] 统一移动端 bottom nav 或 sheet menu。
+- [x] 建 Dashboard。
+- [x] 重组 Create / Assets / Account / Admin 路由。
+- [x] 把现有图片功能迁入 Image Studio。
+- [x] 写 `docs/features/ui-standard.md`。
 - [ ] 完成 Copy Studio。
 - [ ] 完成 Assets。
 - [ ] 完成 Video Studio。

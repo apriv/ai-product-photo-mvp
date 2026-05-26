@@ -13,6 +13,7 @@ docs/
 │   └── v1-mvp.md
 ├── features/
 │   ├── ui-foundation.md
+│   ├── ui-standard.md
 │   ├── poster-generation-v1.md
 │   └── user-management.md
 └── operations/
@@ -29,6 +30,7 @@ docs/
 ## 功能文档
 
 - [`features/ui-foundation.md`](./features/ui-foundation.md)：v2 UI 基座。
+- [`features/ui-standard.md`](./features/ui-standard.md)：登录后 App 的 UI 标准。
 - [`features/poster-generation-v1.md`](./features/poster-generation-v1.md)：海报生成 v1。
 - [`features/user-management.md`](./features/user-management.md)：用户、激活码、积分系统。
 

@@ -2,7 +2,7 @@ import AppShell from "@/components/app-shell";
 import { EmptyState, PageHeader } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth";
 
-export default async function VideoPage() {
+export default async function CopyPage() {
   const user = await getCurrentUser();
   const shellUser = user
     ? { username: user.username, role: user.role }
@@ -12,13 +12,13 @@ export default async function VideoPage() {
     <AppShell initialUser={shellUser}>
       <div className="space-y-6">
         <PageHeader
-          eyebrow="Create / Video"
-          title="Video Studio"
-          description="商品短视频会在 UI Foundation、Copy Studio 和 Assets 稳定后进入实现。"
+          eyebrow="Create / Copy"
+          title="Copy Studio"
+          description="广告标题、卖点、CTA 和视频脚本生成会作为 v2 的下一阶段进入实现。"
         />
         <EmptyState
-          title="Video Studio 尚未开放"
-          description="v2 会先完成脚本结构、素材管理和长任务状态设计，再接入视频生成模型。"
+          title="Copy Studio 待实现"
+          description="当前先保留路由和导航位置，等 UI Foundation 稳定后再接入生成逻辑。"
         />
       </div>
     </AppShell>

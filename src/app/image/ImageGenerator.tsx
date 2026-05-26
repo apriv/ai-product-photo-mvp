@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
 import { useDropzone } from "react-dropzone";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { PageHeader } from "@/components/ui";
 import {
   compressImage,
   CompressionInfo,
@@ -241,14 +242,14 @@ export default function ImageGenerator() {
   });
 
   return (
-    <main className={`min-h-screen bg-gray-50 px-6 py-10 ${posterFontClassName}`}>
-      <div className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">AI 商品图生成器</h1>
-          <Link href="/" className="text-sm text-gray-500 hover:text-black">
-            ← 返回首页
-          </Link>
-        </div>
+    <div className={`space-y-6 ${posterFontClassName}`}>
+      <PageHeader
+        eyebrow="Create / Image"
+        title="Image Studio"
+        description="上传一张商品照片，生成适合电商使用的商品图、海报、白底图或抠图结果。"
+      />
+
+      <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
 
         <div className="mt-3 flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm">
           <div className="text-gray-600">
@@ -268,10 +269,6 @@ export default function ImageGenerator() {
             激活 / 账户
           </Link>
         </div>
-
-        <p className="mt-3 text-gray-600">
-          上传一张商品照片，快速生成适合电商使用的商品图。
-        </p>
 
         {errorMessage && (
           <div className="mt-6 rounded-lg bg-red-50 p-4 text-sm text-red-700 border border-red-200">
@@ -493,7 +490,7 @@ export default function ImageGenerator() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }
 

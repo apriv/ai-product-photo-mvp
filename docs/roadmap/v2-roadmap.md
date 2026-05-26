@@ -27,31 +27,31 @@ git push origin archive/mvp-final
 
 目标：打开项目后，第一眼就是商用 SaaS 工作台，而不是 demo 工具。确定UI基础，未来统一。不再做UI决策。
 
-- [ ] 阅读当前 Next.js 版本文档：`node_modules/next/dist/docs/`。
-- [ ] 写 `docs/ui-standard.md`。根据UI_foundation.md做UI
+- [x] 阅读当前 Next.js 版本文档：`node_modules/next/dist/docs/`。
+- [x] 写 `docs/features/ui-standard.md`。根据 `features/ui-foundation.md` 做 UI
 - [ ] 整理 shadcn/ui 基础组件。
-- [ ] 添加 Button。
-- [ ] 添加 Card。
-- [ ] 添加 Badge。
+- [x] 添加 Button。
+- [x] 添加 Card。
+- [x] 添加 Badge。
 - [ ] 添加 Tabs。
 - [ ] 添加 Input。
 - [ ] 添加 Textarea。
 - [ ] 添加 Sheet。
 - [ ] 添加 Dropdown。
-- [ ] 添加 Sidebar。
-- [ ] 建立统一 `AppShell`。
-- [ ] 建桌面端 sidebar。
-- [ ] 建桌面端 topbar。
-- [ ] 建移动端 bottom nav 或 sheet menu。
-- [ ] 建 Dashboard 页面。
-- [ ] 统一 Create / Assets / Account / Admin 路由结构。
-- [ ] 把现有 Image 页面套进 AppShell。
+- [x] 添加 Sidebar。
+- [x] 建立统一 `AppShell`。
+- [x] 建桌面端 sidebar。
+- [x] 建桌面端 topbar。
+- [x] 建移动端 bottom nav 或 sheet menu。
+- [x] 建 Dashboard 页面。
+- [x] 统一 Create / Assets / Account / Admin 路由结构。
+- [x] 把现有 Image 页面套进 AppShell。
 
 验收标准：
 
-- [ ] 桌面端像稳定的 Studio/Admin 工作台。
+- [x] 桌面端像稳定的 Studio/Admin 工作台。
 - [ ] 手机端可以顺畅上传、生成、下载。
-- [ ] 新增 Copy/Video 页面时不用重新设计导航和布局。
+- [x] 新增 Copy/Video 页面时不用重新设计导航和布局。
 - [ ] 页面背景、卡片、间距、标题、按钮、状态提示、空状态风格一致。未来统一模板。
 
 ## M1: Image Studio Refresh
@@ -161,4 +161,3 @@ git push origin archive/mvp-final
 - [ ] 手机端强调一步一步完成任务。
 - [ ] 登录后第一屏是可工作的 dashboard。
 - [ ] 减少花哨装饰，增加清晰结构、稳定状态、可信细节。
-

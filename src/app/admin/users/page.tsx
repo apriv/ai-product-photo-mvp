@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { PageHeader } from "@/components/ui";
 
 type AdminUser = {
   id: string;
@@ -46,8 +47,12 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">用户</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <PageHeader
+          eyebrow="Admin"
+          title="用户"
+          description="查看用户余额、套餐和注册信息，并按需调整积分。"
+        />
         <div className="text-sm text-gray-500">共 {total} 个用户</div>
       </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { PageHeader } from "@/components/ui";
 
 type Plan = {
   id: string;
@@ -81,8 +82,12 @@ export default function AdminCodesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">激活码</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <PageHeader
+          eyebrow="Admin"
+          title="激活码"
+          description="生成、筛选、复制和导出用于外部销售渠道的激活码。"
+        />
         <div className="flex items-center gap-2 text-sm">
           <button
             onClick={() => setShowGenerator(true)}

@@ -45,23 +45,25 @@
 
 ## M0 待办
 
-- [ ] 阅读当前 Next.js 版本文档：`node_modules/next/dist/docs/`。
+- [x] 阅读当前 Next.js 版本文档：`node_modules/next/dist/docs/`。
 - [ ] 安装/整理 shadcn/ui。
 - [ ] 添加 Button / Card / Badge / Tabs / Input / Textarea。
 - [ ] 添加 Sheet / Dropdown / Sidebar。
-- [ ] 建 `AppShell`。
-- [ ] 建桌面 Sidebar。
-- [ ] 建桌面 Topbar。
-- [ ] 建移动 MobileNav。
-- [ ] 建 Dashboard 页面。
-- [ ] 统一 Create / Assets / Account / Admin 路由结构。
-- [ ] 把现有 Image 页面套进 AppShell。
-- [ ] 写 `docs/ui-standard.md`。
+- [x] 建 `AppShell`。
+- [x] 建桌面 Sidebar。
+- [x] 建桌面 Topbar。
+- [x] 建移动 MobileNav。
+- [x] 建 Dashboard 页面。
+- [x] 统一 Create / Assets / Account / Admin 路由结构。
+- [x] 把现有 Image 页面套进 AppShell。
+- [x] 写 `docs/features/ui-standard.md`。
+
+说明：当前先建立了轻量 `Button` / `Card` / `Badge` / `PageHeader` / `EmptyState` 和 AppShell 导航骨架；shadcn/ui 组件整理仍作为后续小步保留。
 
 ## 验收标准
 
-- [ ] 打开项目后，看起来像一个商用 SaaS 工作台。
+- [x] 打开项目后，看起来像一个商用 SaaS 工作台。
 - [ ] 手机端可以正常上传图片和操作。
-- [ ] 以后新增 Copy / Video 页面不用重新设计整体框架。
-- [ ] 基础组件样式一致。
+- [x] 以后新增 Copy / Video 页面不用重新设计整体框架。
+- [x] 基础组件样式一致。
 - [ ] 页面状态一致：loading、empty、error、success、insufficient credits。

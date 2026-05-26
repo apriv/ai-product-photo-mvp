@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { PageHeader } from "@/components/ui";
 
 type StatsData = {
   range: string;
@@ -67,8 +68,12 @@ export default function AdminStatsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">统计</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <PageHeader
+          eyebrow="Admin"
+          title="统计"
+          description="按时间窗口查看生成成功率、积分消耗、模板和用户分布。"
+        />
         <div className="flex gap-2 text-sm">
           {RANGES.map((r) => (
             <button

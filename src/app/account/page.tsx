@@ -3,6 +3,8 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import AppShell from "@/components/app-shell";
+import { PageHeader } from "@/components/ui";
 
 type Wallet = {
   balance: number;
@@ -88,31 +90,30 @@ export default function AccountPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-gray-50 px-6 py-10">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
+      <AppShell>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700">
           {error}
         </div>
-      </main>
+      </AppShell>
     );
   }
 
   if (!data) {
     return (
-      <main className="min-h-screen bg-gray-50 px-6 py-10">
-        <div className="mx-auto max-w-2xl text-gray-500">加载中...</div>
-      </main>
+      <AppShell>
+        <div className="text-sm text-gray-500">加载中...</div>
+      </AppShell>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 px-6 py-10">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">账户</h1>
-          <Link href="/" className="text-sm text-gray-500 hover:text-black">
-            ← 返回首页
-          </Link>
-        </div>
+    <AppShell initialUser={data.user}>
+      <div className="mx-auto max-w-4xl space-y-6">
+        <PageHeader
+          eyebrow="Account"
+          title="账户与积分"
+          description="查看当前套餐、余额和最近积分流水，也可以激活新的套餐或补充包。"
+        />
 
         <section className="rounded-2xl bg-white p-6 shadow">
           <div className="flex items-baseline justify-between">
@@ -236,6 +237,6 @@ export default function AccountPage() {
           )}
         </section>
       </div>
-    </main>
+    </AppShell>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageHeader } from "@/components/ui";
 import { prisma } from "@/lib/prisma";
 
 export default async function AdminHome() {
@@ -18,7 +19,11 @@ export default async function AdminHome() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">概览</h1>
+      <PageHeader
+        eyebrow="Admin"
+        title="管理概览"
+        description="查看用户、激活码和生成调用的核心运营状态。"
+      />
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Card label="用户总数" value={userCount} />
         <Card label="未使用激活码" value={unused} />
