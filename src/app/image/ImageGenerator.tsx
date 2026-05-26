@@ -11,7 +11,16 @@ import {
 import { useDropzone } from "react-dropzone";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PageHeader, Tabs } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Input,
+  LinkButton,
+  PageHeader,
+  Tabs,
+  Textarea,
+} from "@/components/ui";
 import {
   compressImage,
   CompressionInfo,
@@ -104,7 +113,6 @@ export default function ImageGenerator() {
   const selectedCost = getImageTemplate(selectedTemplate)?.cost ?? 0;
   const insufficient =
     balance !== null && balance < selectedCost && selectedCost > 0;
-  const mobileStep = generatedImage ? 3 : file ? 2 : 1;
   const templateTabs = imageTemplates.map((item) => ({
     value: item.name,
     label: item.name,
@@ -227,6 +235,15 @@ export default function ImageGenerator() {
     (selectedTemplate === POSTER_TEMPLATE_NAME ||
       selectedTemplate === TITLE_TEMPLATE_NAME) &&
     Boolean(generatedImage);
+  const mobileStep = !file
+    ? 1
+    : !generatedImage
+      ? 2
+      : isPosterFlow
+        ? finalPosterImage
+          ? 4
+          : 3
+        : 4;
 
   const handlePosterTextChange = (field: PosterTextField, value: string) => {
     setPosterText((current) => ({ ...current, [field]: value }));
@@ -311,10 +328,15 @@ export default function ImageGenerator() {
           </div>
 
           <div className="flex-1 space-y-4 overflow-y-auto p-4">
-            <div className="flex items-center gap-2 text-xs font-medium text-gray-500 lg:hidden">
+            <div className="flex flex-wrap gap-2 text-xs font-medium text-gray-500 lg:hidden">
               <StepPill active={mobileStep === 1}>1 上传</StepPill>
-              <StepPill active={mobileStep === 2}>2 生成</StepPill>
-              <StepPill active={mobileStep === 3}>3 结果</StepPill>
+              <StepPill active={mobileStep === 2}>2 选择方式</StepPill>
+              <StepPill active={mobileStep === 3}>
+                {isPosterFlow ? "3 编辑海报" : "3 生成结果"}
+              </StepPill>
+              <StepPill active={mobileStep === 4}>
+                {isPosterFlow ? "4 下载海报" : "4 下载图片"}
+              </StepPill>
             </div>
 
             <div>
@@ -366,6 +388,25 @@ export default function ImageGenerator() {
                     <p className="mt-1 text-xs text-gray-400">
                       点击或拖拽更换图片
                     </p>
+                    {file && (
+                      <div className="mt-3">
+                        <Button
+                          type="button"
+                          tone="secondary"
+                          className="w-full"
+                          onClick={() => {
+                            setFile(null);
+                            setImage(null);
+                            setGeneratedImage(null);
+                            setFinalPosterImage(null);
+                            setErrorMessage("");
+                            setCompressionInfo(null);
+                          }}
+                        >
+                          重新上传
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="flex min-h-36 flex-col items-center justify-center">
@@ -476,76 +517,173 @@ export default function ImageGenerator() {
 
           {generatedImage ? (
             isPosterFlow ? (
-              <div className="grid gap-4 p-4 xl:grid-cols-[220px_minmax(360px,1fr)]">
-                <div className="grid grid-cols-2 gap-2 xl:grid-cols-1 xl:self-start">
-                  {posterTextTemplates.map((template) => (
-                    <button
-                      key={template.id}
-                      type="button"
-                      onClick={() => {
-                        setPosterTemplateId(template.id);
-                        setPosterText(template.defaultText);
-                        setFinalPosterImage(null);
-                      }}
-                      className={`rounded-lg border p-3 text-left transition ${
-                        posterTemplateId === template.id
-                          ? "border-black bg-gray-50"
-                          : "border-gray-200 hover:border-black"
-                      }`}
-                    >
-                      <div className="text-sm font-semibold text-gray-900">
-                        {template.name}
+              <div className="grid gap-4 p-4 xl:grid-cols-[240px_minmax(0,1fr)]">
+                <div className="space-y-4 xl:self-start">
+                  <Card className="p-4">
+                    <div className="mb-4 flex items-center justify-between gap-4">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-950">
+                          海报模板
+                        </h3>
+                        <p className="mt-1 text-xs text-gray-500">
+                          选择海报风格，文字会自动套用对应位置。
+                        </p>
                       </div>
-                      <div className="mt-1 text-xs leading-5 text-gray-500">
-                        {template.desc}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 xl:grid-cols-1">
+                      {posterTextTemplates.map((template) => (
+                        <button
+                          key={template.id}
+                          type="button"
+                          onClick={() => {
+                            setPosterTemplateId(template.id);
+                            setPosterText(template.defaultText);
+                            setFinalPosterImage(null);
+                          }}
+                          className={`rounded-lg border p-3 text-left transition ${
+                            posterTemplateId === template.id
+                              ? "border-black bg-gray-50"
+                              : "border-gray-200 hover:border-black"
+                          }`}
+                        >
+                          <div className="text-sm font-semibold text-gray-900">
+                            {template.name}
+                          </div>
+                          <div className="mt-1 text-xs leading-5 text-gray-500">
+                            {template.desc}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </Card>
+
+                  <Card className="p-4">
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold text-gray-950">
+                        编辑海报文字
+                      </h3>
+                      <p className="mt-1 text-xs text-gray-500">
+                        在下方输入内容，海报预览会同步展示。
+                      </p>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="mb-2 block text-xs font-medium text-gray-700">
+                          主标题
+                        </label>
+                        <Textarea
+                          value={posterText.title}
+                          onChange={(event) =>
+                            handlePosterTextChange("title", event.target.value)
+                          }
+                          rows={2}
+                          className={
+                            isPosterTextTooLong(
+                              posterText.title,
+                              selectedPosterTemplate.fields.title
+                            )
+                              ? "border-red-400"
+                              : ""
+                          }
+                        />
                       </div>
-                    </button>
-                  ))}
+                      <div>
+                        <label className="mb-2 block text-xs font-medium text-gray-700">
+                          副标题
+                        </label>
+                        <Textarea
+                          value={posterText.subtitle}
+                          onChange={(event) =>
+                            handlePosterTextChange("subtitle", event.target.value)
+                          }
+                          rows={2}
+                          className={
+                            isPosterTextTooLong(
+                              posterText.subtitle,
+                              selectedPosterTemplate.fields.subtitle
+                            )
+                              ? "border-red-400"
+                              : ""
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-2 block text-xs font-medium text-gray-700">
+                          CTA 按钮文案
+                        </label>
+                        <Input
+                          value={posterText.cta}
+                          onChange={(event) =>
+                            handlePosterTextChange("cta", event.target.value)
+                          }
+                          className={
+                            isPosterTextTooLong(
+                              posterText.cta,
+                              selectedPosterTemplate.fields.cta
+                            )
+                              ? "border-red-400"
+                              : ""
+                          }
+                        />
+                      </div>
+                    </div>
+                  </Card>
                 </div>
 
                 <div className="min-w-0">
-                  <div className="mx-auto max-w-[min(100%,560px)]">
-                    <PosterEditor
-                      editorRef={posterEditorRef}
-                      imageUrl={generatedImage}
-                      template={selectedPosterTemplate}
-                      values={posterText}
-                      onChange={handlePosterTextChange}
-                    />
-                  </div>
+                  <div className="space-y-4">
+                    <Card className="p-4">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                          <h3 className="text-sm font-semibold text-gray-950">
+                            海报预览
+                          </h3>
+                          <p className="mt-1 text-xs text-gray-500">
+                            真实效果会按照你选择的模板自动布局。
+                          </p>
+                        </div>
+                      </div>
+                      <PosterEditor
+                        editorRef={posterEditorRef}
+                        imageUrl={generatedImage}
+                        template={selectedPosterTemplate}
+                        values={posterText}
+                        onChange={handlePosterTextChange}
+                      />
+                    </Card>
 
-                  <div className="mx-auto mt-4 flex max-w-[min(100%,560px)] flex-wrap items-center justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={handleRenderPoster}
-                      disabled={posterRendering}
-                      className="rounded-lg bg-black px-5 py-2 text-sm text-white disabled:cursor-not-allowed disabled:bg-gray-300"
-                    >
-                      {posterRendering ? "渲染中..." : "确认并生成海报"}
-                    </button>
-                    {finalPosterImage && (
-                      <a
-                        href={finalPosterImage}
-                        download
-                        className="rounded-lg border border-gray-300 px-5 py-2 text-sm text-gray-900 hover:border-black"
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <Button
+                        type="button"
+                        onClick={handleRenderPoster}
+                        disabled={posterRendering}
                       >
-                        打开/下载
-                      </a>
+                        {posterRendering ? "渲染中..." : "确认并生成海报"}
+                      </Button>
+                      {finalPosterImage && (
+                        <a
+                          href={finalPosterImage}
+                          download
+                          className="rounded-lg border border-gray-300 px-5 py-2 text-sm text-gray-900 hover:border-black"
+                        >
+                          打开/下载
+                        </a>
+                      )}
+                    </div>
+
+                    {finalPosterImage && (
+                      <Card className="p-4">
+                        <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                          最终海报
+                        </h3>
+                        <img
+                          src={finalPosterImage}
+                          alt="final poster"
+                          className="rounded-xl border bg-gray-100"
+                        />
+                      </Card>
                     )}
                   </div>
-
-                  {finalPosterImage && (
-                    <div className="mx-auto mt-6 max-w-[min(100%,560px)]">
-                      <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                        最终海报
-                      </h3>
-                      <img
-                        src={finalPosterImage}
-                        alt="final poster"
-                        className="rounded-xl border bg-gray-100"
-                      />
-                    </div>
-                  )}
                 </div>
               </div>
             ) : (
@@ -558,15 +696,42 @@ export default function ImageGenerator() {
                 />
               </div>
             )
-          ) : (
-            <div className="flex min-h-[460px] flex-col items-center justify-center px-6 text-center">
-              <div className="rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-500">
-                等待生成
+          ) : loading ? (
+            <div className="flex min-h-[460px] items-center justify-center px-6 text-center">
+              <div>
+                <div className="mb-3 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-900">
+                  {status || "生成中..."}
+                </div>
+                <p className="max-w-sm text-sm leading-6 text-gray-500">
+                  请耐心等待，生成过程可能需要几秒钟。生成完成后，结果会自动显示在这里。
+                </p>
               </div>
-              <p className="mt-4 max-w-sm text-sm leading-6 text-gray-500">
-                桌面端左侧完成上传和选择，右侧会直接显示结果；手机端按上传、生成、结果顺序向下操作。
-              </p>
             </div>
+          ) : (
+            <EmptyState
+              title="尚未生成图片"
+              description="先上传商品图并选择生成方式，结果会在此显示。"
+              action={
+                file ? (
+                  <Button
+                    type="button"
+                    tone="secondary"
+                    onClick={handleGenerate}
+                    disabled={loading || insufficient || planExpired}
+                  >
+                    {planExpired
+                      ? "套餐已到期"
+                      : insufficient
+                        ? "积分不足"
+                        : "开始生成"}
+                  </Button>
+                ) : (
+                  <LinkButton href="/create/image" tone="secondary">
+                    去上传商品图
+                  </LinkButton>
+                )
+              }
+            />
           )}
         </section>
       </div>

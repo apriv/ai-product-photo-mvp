@@ -58,14 +58,14 @@ git push origin archive/mvp-final
 
 目标：把现有图片能力从独立页面整理成工作台模块。
 
-- [ ] 图片生成入口迁到 `Create / Image`。
+- [x] 图片生成入口迁到 `Create / Image`。
 - [x] 商品图、海报、白底图用 tabs 或 mode switch 管理。
 - [x] 手机端改成 step-by-step：上传 -> 选择模式 -> 编辑 -> 生成 -> 下载。
 - [x] 桌面端保留高效工作区：输入设置 + 预览结果。
-- [ ] 海报编辑并入 UI 标准。
-- [ ] 优化 loading 状态。
-- [ ] 优化失败状态。
-- [ ] 优化积分不足状态。
+- [x] 海报编辑并入 UI 标准。
+- [x] 优化 loading 状态。
+- [x] 优化失败状态。
+- [x] 优化积分不足状态。
 - [x] 优化空状态。
 - [ ] 保留 v1 所有图片功能。
 
@@ -82,7 +82,6 @@ git push origin archive/mvp-final
 - [ ] 广告标题生成。
 - [ ] 商品卖点提炼。
 - [ ] CTA 生成。
-- [ ] 小红书风格短文案。
 - [ ] TikTok 风格短文案。
 - [ ] Instagram 风格短文案。
 - [ ] 视频脚本雏形：开头 hook。
