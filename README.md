@@ -37,6 +37,12 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## 项目文档
 
-- [`docs/project.md`](./docs/project.md) — 项目结构、功能、未来计划
-- [`docs/user-management.md`](./docs/user-management.md) — 用户账号 / 卡密激活设计文档
-- [`docs/dev-notes.md`](./docs/dev-notes.md) — 部署、PM2、Nginx 操作笔记 + Todo
+- [`docs/README.md`](./docs/README.md) — 文档索引
+- [`docs/overview.md`](./docs/overview.md) — 项目介绍
+- [`docs/roadmap/product-roadmap.md`](./docs/roadmap/product-roadmap.md) — 项目总路线图
+- [`docs/roadmap/v2-roadmap.md`](./docs/roadmap/v2-roadmap.md) — v2 待办清单
+- [`docs/releases/v1-mvp.md`](./docs/releases/v1-mvp.md) — v1 MVP 已完成功能说明
+- [`docs/features/ui-foundation.md`](./docs/features/ui-foundation.md) — v2 UI 基座设计
+- [`docs/features/poster-generation-v1.md`](./docs/features/poster-generation-v1.md) — 海报生成 v1 功能文档
+- [`docs/features/user-management.md`](./docs/features/user-management.md) — 用户账号 / 激活码 / 积分系统文档
+- [`docs/operations/deployment-runbook.md`](./docs/operations/deployment-runbook.md) — 部署、PM2、Nginx 操作手册
