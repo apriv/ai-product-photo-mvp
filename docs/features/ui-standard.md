@@ -51,6 +51,9 @@
 - `LinkButton`
 - `Card`
 - `Badge`
+- `Tabs`
+- `Input`
+- `Textarea`
 - `PageHeader`
 - `EmptyState`
 
@@ -83,4 +86,3 @@
 - success
 - insufficient credits
 - disabled / coming soon
-

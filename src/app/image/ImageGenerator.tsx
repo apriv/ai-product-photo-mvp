@@ -11,7 +11,7 @@ import {
 import { useDropzone } from "react-dropzone";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, Tabs } from "@/components/ui";
 import {
   compressImage,
   CompressionInfo,
@@ -104,6 +104,13 @@ export default function ImageGenerator() {
   const insufficient =
     balance !== null && balance < selectedCost && selectedCost > 0;
   const mobileStep = generatedImage ? 3 : file ? 2 : 1;
+  const templateTabs = imageTemplates.map((item) => ({
+    value: item.name,
+    label: item.name,
+    description: item.desc,
+    meta: item.cost === 0 ? "免费" : `${item.cost} 积分`,
+    disabled: !item.enabled,
+  }));
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
@@ -365,39 +372,18 @@ export default function ImageGenerator() {
                   {selectedCost === 0 ? "免费" : `${selectedCost} 积分`}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
-                {imageTemplates.map((item) => (
-                  <button
-                    key={item.name}
-                    disabled={!item.enabled || loading}
-                    onClick={() => {
-                      if (item.enabled && !loading) {
-                        setSelectedTemplate(item.name);
-                        setGeneratedImage(null);
-                        setFinalPosterImage(null);
-                        setErrorMessage("");
-                      }
-                    }}
-                    className={`rounded-lg border p-3 text-left transition ${
-                      !item.enabled
-                        ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
-                        : selectedTemplate === item.name
-                          ? "border-black bg-gray-50"
-                          : "border-gray-200 hover:border-black"
-                    } ${loading ? "opacity-50" : ""}`}
-                  >
-                    <div className="flex items-baseline justify-between gap-2">
-                      <div className="text-sm font-medium">{item.name}</div>
-                      <div className="shrink-0 text-xs text-gray-500">
-                        {item.cost === 0 ? "免费" : `${item.cost} 积分`}
-                      </div>
-                    </div>
-                    <div className="mt-1 text-xs leading-5 opacity-70">
-                      {item.desc}
-                    </div>
-                  </button>
-                ))}
-              </div>
+              <Tabs
+                items={templateTabs}
+                value={selectedTemplate}
+                disabled={loading}
+                className="grid-cols-2 lg:grid-cols-1"
+                onChange={(nextTemplate) => {
+                  setSelectedTemplate(nextTemplate);
+                  setGeneratedImage(null);
+                  setFinalPosterImage(null);
+                  setErrorMessage("");
+                }}
+              />
             </div>
           </div>
 

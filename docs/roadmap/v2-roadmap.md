@@ -33,9 +33,9 @@ git push origin archive/mvp-final
 - [x] 添加 Button。
 - [x] 添加 Card。
 - [x] 添加 Badge。
-- [ ] 添加 Tabs。
-- [ ] 添加 Input。
-- [ ] 添加 Textarea。
+- [x] 添加 Tabs。
+- [x] 添加 Input。
+- [x] 添加 Textarea。
 - [ ] 添加 Sheet。
 - [ ] 添加 Dropdown。
 - [x] 添加 Sidebar。
@@ -59,14 +59,14 @@ git push origin archive/mvp-final
 目标：把现有图片能力从独立页面整理成工作台模块。
 
 - [ ] 图片生成入口迁到 `Create / Image`。
-- [ ] 商品图、海报、白底图用 tabs 或 mode switch 管理。
-- [ ] 手机端改成 step-by-step：上传 -> 选择模式 -> 编辑 -> 生成 -> 下载。
-- [ ] 桌面端保留高效工作区：输入设置 + 预览结果。
+- [x] 商品图、海报、白底图用 tabs 或 mode switch 管理。
+- [x] 手机端改成 step-by-step：上传 -> 选择模式 -> 编辑 -> 生成 -> 下载。
+- [x] 桌面端保留高效工作区：输入设置 + 预览结果。
 - [ ] 海报编辑并入 UI 标准。
 - [ ] 优化 loading 状态。
 - [ ] 优化失败状态。
 - [ ] 优化积分不足状态。
-- [ ] 优化空状态。
+- [x] 优化空状态。
 - [ ] 保留 v1 所有图片功能。
 
 验收标准：

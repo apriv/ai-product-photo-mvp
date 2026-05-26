@@ -1,5 +1,11 @@
 import Link from "next/link";
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react";
+import type {
+  AnchorHTMLAttributes,
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ReactNode,
+  TextareaHTMLAttributes,
+} from "react";
 
 export function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -95,6 +101,103 @@ export function Badge({
     >
       {children}
     </span>
+  );
+}
+
+type TabItem = {
+  value: string;
+  label: ReactNode;
+  description?: ReactNode;
+  meta?: ReactNode;
+  disabled?: boolean;
+};
+
+export function Tabs({
+  items,
+  value,
+  onChange,
+  className,
+  itemClassName,
+  disabled,
+}: {
+  items: TabItem[];
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+  itemClassName?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <div className={cn("grid gap-2", className)} role="tablist">
+      {items.map((item) => {
+        const active = item.value === value;
+        const itemDisabled = disabled || item.disabled;
+
+        return (
+          <button
+            key={item.value}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            disabled={itemDisabled}
+            onClick={() => {
+              if (!itemDisabled) onChange(item.value);
+            }}
+            className={cn(
+              "rounded-lg border p-3 text-left transition disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400",
+              active
+                ? "border-black bg-gray-50"
+                : "border-gray-200 bg-white hover:border-black",
+              itemClassName
+            )}
+          >
+            <span className="flex items-baseline justify-between gap-2">
+              <span className="text-sm font-medium">{item.label}</span>
+              {item.meta && (
+                <span className="shrink-0 text-xs text-gray-500">
+                  {item.meta}
+                </span>
+              )}
+            </span>
+            {item.description && (
+              <span className="mt-1 block text-xs leading-5 text-gray-500">
+                {item.description}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function Input({
+  className,
+  ...props
+}: InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      className={cn(
+        "h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-950 outline-none transition placeholder:text-gray-400 focus:border-gray-400 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export function Textarea({
+  className,
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      className={cn(
+        "min-h-28 w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm leading-6 text-gray-950 outline-none transition placeholder:text-gray-400 focus:border-gray-400 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400",
+        className
+      )}
+      {...props}
+    />
   );
 }
 
