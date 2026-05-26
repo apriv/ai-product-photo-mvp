@@ -2,6 +2,7 @@ import Link from "next/link";
 import type {
   AnchorHTMLAttributes,
   ButtonHTMLAttributes,
+  DetailsHTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
   TextareaHTMLAttributes,
@@ -194,6 +195,112 @@ export function Textarea({
     <textarea
       className={cn(
         "min-h-28 w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm leading-6 text-gray-950 outline-none transition placeholder:text-gray-400 focus:border-gray-400 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export function Sheet({
+  open,
+  onClose,
+  title,
+  children,
+  side = "left",
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
+  side?: "left" | "right";
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-40 lg:hidden">
+      <button
+        type="button"
+        className="absolute inset-0 bg-gray-950/30"
+        aria-label="关闭面板"
+        onClick={onClose}
+      />
+      <div
+        className={cn(
+          "absolute inset-y-0 flex w-80 max-w-[86vw] flex-col bg-white shadow-xl",
+          side === "left" ? "left-0" : "right-0"
+        )}
+      >
+        <div className="flex h-16 items-center justify-between border-b border-gray-200 px-5">
+          <div className="text-sm font-semibold text-gray-950">{title}</div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-gray-100"
+          >
+            关闭
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+export function Dropdown({
+  label,
+  children,
+  className,
+  align = "right",
+  ...props
+}: DetailsHTMLAttributes<HTMLDetailsElement> & {
+  label: ReactNode;
+  children: ReactNode;
+  align?: "left" | "right";
+}) {
+  return (
+    <details className={cn("group relative", className)} {...props}>
+      <summary className="inline-flex h-10 cursor-pointer list-none items-center justify-center rounded-lg bg-gray-950 px-4 text-sm font-medium text-white transition hover:bg-gray-800 [&::-webkit-details-marker]:hidden">
+        {label}
+        <span className="ml-2 text-xs opacity-70">⌄</span>
+      </summary>
+      <div
+        className={cn(
+          "absolute top-12 z-30 w-56 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg",
+          align === "right" ? "right-0" : "left-0"
+        )}
+      >
+        {children}
+      </div>
+    </details>
+  );
+}
+
+export function DropdownLink({
+  className,
+  disabled,
+  ...props
+}: AnchorHTMLAttributes<HTMLAnchorElement> & {
+  href: string;
+  disabled?: boolean;
+}) {
+  if (disabled) {
+    return (
+      <span
+        className={cn(
+          "block cursor-not-allowed px-3 py-2 text-sm text-gray-400",
+          className
+        )}
+      >
+        {props.children}
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      className={cn(
+        "block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-950",
         className
       )}
       {...props}

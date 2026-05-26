@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { cn } from "./ui";
+import { cn, Dropdown, DropdownLink, Sheet } from "./ui";
 
 type ShellUser = {
   username: string;
@@ -192,12 +192,15 @@ export default function AppShell({
                   {wallet.balance} 积分
                 </Link>
               )}
-              <Link
-                href="/create/image"
-                className="inline-flex h-10 items-center justify-center rounded-lg bg-gray-950 px-4 text-sm font-medium text-white hover:bg-gray-800"
-              >
-                创建
-              </Link>
+              <Dropdown label="创建">
+                <DropdownLink href="/create/image">图片生成</DropdownLink>
+                <DropdownLink href="/create/copy" disabled>
+                  文案生成 · 待开放
+                </DropdownLink>
+                <DropdownLink href="/create/video" disabled>
+                  视频生成 · 待开放
+                </DropdownLink>
+              </Dropdown>
             </div>
           </div>
         </header>
@@ -209,34 +212,18 @@ export default function AppShell({
 
       <MobileBottomNav pathname={pathname} />
 
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <button
-            className="absolute inset-0 bg-gray-950/30"
-            aria-label="关闭导航"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <div className="absolute inset-y-0 left-0 flex w-80 max-w-[86vw] flex-col bg-white shadow-xl">
-            <div className="flex h-16 items-center justify-between border-b border-gray-200 px-5">
-              <div className="text-sm font-semibold text-gray-950">
-                自媒体大王
-              </div>
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-gray-100"
-              >
-                关闭
-              </button>
-            </div>
-            <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
-              <NavSection title="工作区" items={primaryItems} pathname={pathname} />
-              {user?.role === "ADMIN" && (
-                <NavSection title="管理" items={adminItems} pathname={pathname} />
-              )}
-            </nav>
-          </div>
-        </div>
-      )}
+      <Sheet
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        title="自媒体大王"
+      >
+        <nav className="space-y-6 px-3 py-4">
+          <NavSection title="工作区" items={primaryItems} pathname={pathname} />
+          {user?.role === "ADMIN" && (
+            <NavSection title="管理" items={adminItems} pathname={pathname} />
+          )}
+        </nav>
+      </Sheet>
     </div>
   );
 }

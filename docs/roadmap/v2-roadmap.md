@@ -29,15 +29,15 @@ git push origin archive/mvp-final
 
 - [x] 阅读当前 Next.js 版本文档：`node_modules/next/dist/docs/`。
 - [x] 写 `docs/features/ui-standard.md`。根据 `features/ui-foundation.md` 做 UI
-- [ ] 整理 shadcn/ui 基础组件。
+- [x] 整理 shadcn/ui 基础组件。
 - [x] 添加 Button。
 - [x] 添加 Card。
 - [x] 添加 Badge。
 - [x] 添加 Tabs。
 - [x] 添加 Input。
 - [x] 添加 Textarea。
-- [ ] 添加 Sheet。
-- [ ] 添加 Dropdown。
+- [x] 添加 Sheet。
+- [x] 添加 Dropdown。
 - [x] 添加 Sidebar。
 - [x] 建立统一 `AppShell`。
 - [x] 建桌面端 sidebar。
@@ -52,7 +52,7 @@ git push origin archive/mvp-final
 - [x] 桌面端像稳定的 Studio/Admin 工作台。
 - [ ] 手机端可以顺畅上传、生成、下载。
 - [x] 新增 Copy/Video 页面时不用重新设计导航和布局。
-- [ ] 页面背景、卡片、间距、标题、按钮、状态提示、空状态风格一致。未来统一模板。
+- [x] 页面背景、卡片、间距、标题、按钮、状态提示、空状态风格一致。未来统一模板。
 
 ## M1: Image Studio Refresh
 

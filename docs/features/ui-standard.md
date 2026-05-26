@@ -54,6 +54,8 @@
 - `Tabs`
 - `Input`
 - `Textarea`
+- `Sheet`
+- `Dropdown`
 - `PageHeader`
 - `EmptyState`
 
