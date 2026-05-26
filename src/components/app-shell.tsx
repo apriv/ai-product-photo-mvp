@@ -49,7 +49,7 @@ const createItems: NavItem[] = [
 const primaryItems: NavItem[] = [
   { href: "/", label: "首页", detail: "工作台总览", match: ["/"] },
   ...createItems,
-  { href: "/assets", label: "素材库", detail: "素材与历史", disabled: true },
+  { href: "/assets", label: "素材库", detail: "素材与历史" },
   { href: "/account", label: "账户", detail: "余额与套餐" },
 ];
 
@@ -304,10 +304,10 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
 }
 
 function MobileBottomNav({ pathname }: { pathname: string }) {
-  const items = [
+  const items: NavItem[] = [
     { href: "/", label: "首页", match: ["/"] },
     { href: "/create/image", label: "创建", match: ["/create", "/image"] },
-    { href: "/assets", label: "素材", disabled: true },
+    { href: "/assets", label: "素材" },
     { href: "/account", label: "账户" },
   ];
 

@@ -15,7 +15,7 @@ export type GenerationLogEntry = {
 
 export async function recordGeneration(entry: GenerationLogEntry) {
   try {
-    await prisma.generationLog.create({
+    return await prisma.generationLog.create({
       data: {
         userId: entry.userId,
         feature: entry.feature,
@@ -29,5 +29,6 @@ export async function recordGeneration(entry: GenerationLogEntry) {
     });
   } catch {
     // Logging failures must not break generation — swallow.
+    return null;
   }
 }

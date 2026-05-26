@@ -29,6 +29,7 @@ model User {
   activations ActivationCode[]
   ledger      CreditLedger[]
   generations GenerationLog[]
+  assets      Asset[]
 }
 
 model Session {
@@ -138,4 +139,42 @@ model GenerationLog {
 
   @@index([userId, createdAt])
   @@index([status])
+}
+
+// ------------------------------------------------------------------ Assets
+
+enum AssetType {
+  IMAGE
+  POSTER
+  COPY
+  VIDEO
+}
+
+enum AssetStorage {
+  PROVIDER
+  R2
+}
+
+model Asset {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            AssetType
+  title           String
+  template        String?
+  model           String?
+  sourceUrl       String
+  storage         AssetStorage @default(PROVIDER)
+  provider        String?
+  r2Key           String?
+  r2Url           String?
+  mimeType        String?
+  width           Int?
+  height          Int?
+  generationLogId String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
 }

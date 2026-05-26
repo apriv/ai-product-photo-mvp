@@ -7,6 +7,7 @@ import {
   PlanExpiredError,
 } from "@/lib/credits";
 import { prisma } from "@/lib/prisma";
+import { createAsset } from "@/lib/assets";
 import { recordGeneration } from "@/lib/generation-log";
 import logger from "@/lib/logger";
 import { createRequestId, getRequestMeta } from "@/lib/request-meta";
@@ -157,8 +158,7 @@ export async function POST(request: Request) {
         status: "SUCCESS",
         durationMs: duration,
       });
-      const safeImageUrl = await remoteImageToDataUrl(imageUrl);
-      return NextResponse.json({ success: true, imageUrl: safeImageUrl });
+      return NextResponse.json({ success: true, imageUrl });
     }
 
     // ----- Real generation: charge first, then call fal -----
@@ -230,7 +230,7 @@ export async function POST(request: Request) {
         cost: template.cost,
       });
       const safeImageUrl = await remoteImageToDataUrl(imageUrl);
-      await recordGeneration({
+      const generation = await recordGeneration({
         userId,
         feature: "image",
         template: templateName,
@@ -239,7 +239,21 @@ export async function POST(request: Request) {
         status: "SUCCESS",
         durationMs: duration,
       });
-      return NextResponse.json({ success: true, imageUrl: safeImageUrl });
+      const asset = await createAsset({
+        userId,
+        type: templateName === "社媒海报" ? "POSTER" : "IMAGE",
+        title: templateName,
+        sourceUrl: imageUrl,
+        template: templateName,
+        model: template.model,
+        provider: "fal",
+        generationLogId: generation?.id ?? null,
+      });
+      return NextResponse.json({
+        success: true,
+        imageUrl: safeImageUrl,
+        assetId: asset?.id ?? null,
+      });
     } catch (modelError) {
       await refund(userId, template.cost, requestId);
       const errMsg =

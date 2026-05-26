@@ -36,8 +36,8 @@ const quickLinks = [
   {
     href: "/assets",
     title: "素材库",
-    desc: "后续会集中管理图片、文案和视频素材。",
-    live: false,
+    desc: "查看最近生成的图片素材，打开或下载结果。",
+    live: true,
   },
 ];
 
