@@ -51,6 +51,7 @@ const debug = {
 export default function ImageGenerator() {
   const router = useRouter();
   const posterEditorRef = useRef<HTMLDivElement | null>(null);
+  const resultPanelRef = useRef<HTMLElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState("社媒海报");
@@ -197,6 +198,14 @@ export default function ImageGenerator() {
       setFinalPosterImage(null);
       setPosterText(getDefaultPosterText(posterTemplateId));
       setStatus("");
+      window.requestAnimationFrame(() => {
+        if (window.innerWidth < 1024) {
+          resultPanelRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      });
       fetchWallet();
     } catch (error) {
       debug.error("Generate request failed", {
@@ -237,6 +246,14 @@ export default function ImageGenerator() {
         values: posterText,
       });
       setFinalPosterImage(imageUrl);
+      window.requestAnimationFrame(() => {
+        if (window.innerWidth < 1024) {
+          resultPanelRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      });
     } catch (error) {
       debug.error("Poster render failed", {
         error: error instanceof Error ? error.message : String(error),
@@ -427,7 +444,10 @@ export default function ImageGenerator() {
           </div>
         </section>
 
-        <section className="min-h-[520px] rounded-lg border border-gray-200 bg-white shadow-sm lg:min-h-0 lg:overflow-y-auto">
+        <section
+          ref={resultPanelRef}
+          className="min-h-[520px] scroll-mt-20 rounded-lg border border-gray-200 bg-white shadow-sm lg:min-h-0 lg:overflow-y-auto"
+        >
           <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur">
             <div>
               <h2 className="text-sm font-semibold text-gray-950">
