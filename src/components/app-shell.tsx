@@ -35,7 +35,7 @@ const createItems: NavItem[] = [
     href: "/create/copy",
     label: "文案生成",
     detail: "广告文案 / 标题 / CTA",
-    disabled: true,
+    match: ["/create/copy"],
   },
   {
     href: "/create/video",
@@ -194,9 +194,7 @@ export default function AppShell({
               )}
               <Dropdown label="创建">
                 <DropdownLink href="/create/image">图片生成</DropdownLink>
-                <DropdownLink href="/create/copy" disabled>
-                  文案生成 · 待开放
-                </DropdownLink>
+                <DropdownLink href="/create/copy">文案生成</DropdownLink>
                 <DropdownLink href="/create/video" disabled>
                   视频生成 · 待开放
                 </DropdownLink>

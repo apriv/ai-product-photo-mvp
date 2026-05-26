@@ -14,8 +14,8 @@ const createModules = [
     href: "/create/copy",
     title: "文案生成",
     desc: "生成广告标题、卖点、CTA 和短视频脚本。",
-    status: "待开放",
-    live: false,
+    status: "可用",
+    live: true,
   },
   {
     href: "/create/video",

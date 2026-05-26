@@ -91,7 +91,7 @@ git push origin archive/mvp-final
 - [ ] 支持商品描述作为输入上下文。
 - [ ] 支持图片生成结果作为输入上下文。
 - [ ] 支持复制、重新生成、保存到 Assets。
-- 先做前端，文字用placeholder，后面我找合适的文字api接入
+- [x] 先做前端，文字用 placeholder，后面接合适的文字 API。
 
 
 验收标准：
