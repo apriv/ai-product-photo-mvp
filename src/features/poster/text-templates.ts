@@ -62,8 +62,8 @@ const SOFT = posterFontFamilies.soft;
 export const posterTextTemplates: PosterTextTemplate[] = [
   {
     id: "editorial",
-    name: "Editorial",
-    desc: "高级杂志感，适合美妆、香水、饰品",
+    name: "高级",
+    desc: "杂志感，适合美妆、香水、饰品",
     defaultText: {
       title: "Quiet Luxury",
       subtitle: "A refined everyday essential",
@@ -122,7 +122,7 @@ export const posterTextTemplates: PosterTextTemplate[] = [
   },
   {
     id: "studio-pop",
-    name: "Studio Pop",
+    name: "时尚",
     desc: "年轻品牌感，适合服饰、宠物用品、潮玩",
     defaultText: {
       title: "Fresh Drop",
@@ -183,7 +183,7 @@ export const posterTextTemplates: PosterTextTemplate[] = [
   },
   {
     id: "street-note",
-    name: "Street Note",
+    name: "温暖",
     desc: "涂鸦贴纸感，适合潮牌、运动、促销",
     defaultText: {
       title: "Just Landed",

@@ -23,7 +23,9 @@ tail -f /home/ubuntu/.pm2/logs/ai-product-photo-out.log
 
 # Todo
 
-## 图片：上传更高画质
+## 图片：
+- 海报的渲染图和预览图有差异：按钮大小，分辨率
+- 上传更高画质
 
 Nginx 默认 `client_max_body_size` 是 1MB（当前未显式配置），所以前端把图片压缩到 1MB 兜底。以后要支持更高画质上传时：
 
