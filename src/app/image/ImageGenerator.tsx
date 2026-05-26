@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   useCallback,
   useEffect,
@@ -16,7 +17,6 @@ import {
   Card,
   EmptyState,
   Input,
-  LinkButton,
   PageHeader,
   Tabs,
   Textarea,
@@ -61,6 +61,7 @@ export default function ImageGenerator() {
   const router = useRouter();
   const posterEditorRef = useRef<HTMLDivElement | null>(null);
   const resultPanelRef = useRef<HTMLElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState("社媒海报");
@@ -358,7 +359,7 @@ export default function ImageGenerator() {
                     : "border-gray-300 bg-white"
                 } ${loading ? "cursor-not-allowed opacity-50" : ""}`}
               >
-                <input {...getInputProps()} />
+                <input {...getInputProps()} ref={fileInputRef} />
 
                 {status && !generatedImage ? (
                   <div className="flex min-h-36 items-center justify-center">
@@ -367,11 +368,14 @@ export default function ImageGenerator() {
                     </p>
                   </div>
                 ) : image ? (
-                  <div>
-                    <img
+                  <div className="mx-auto max-w-[280px]">
+                    <Image
                       src={image}
                       alt="preview"
+                      width={320}
+                      height={240}
                       className="mx-auto max-h-40 rounded-lg object-contain"
+                      unoptimized
                     />
                     <p className="mt-3 text-xs text-gray-500">
                       {compressionInfo?.wasCompressed
@@ -676,10 +680,13 @@ export default function ImageGenerator() {
                         <h3 className="mb-3 text-sm font-semibold text-gray-900">
                           最终海报
                         </h3>
-                        <img
+                        <Image
                           src={finalPosterImage}
                           alt="final poster"
+                          width={816}
+                          height={816}
                           className="rounded-xl border bg-gray-100"
+                          unoptimized
                         />
                       </Card>
                     )}
@@ -688,11 +695,13 @@ export default function ImageGenerator() {
               </div>
             ) : (
               <div className="flex min-h-[460px] items-center justify-center p-4">
-                <img
+                <Image
                   src={generatedImage}
                   alt="generated"
+                  width={920}
+                  height={640}
                   className="max-h-[calc(100vh-17rem)] rounded-xl border bg-gray-100 object-contain"
-                  crossOrigin="anonymous"
+                  unoptimized
                 />
               </div>
             )
@@ -726,9 +735,13 @@ export default function ImageGenerator() {
                         : "开始生成"}
                   </Button>
                 ) : (
-                  <LinkButton href="/create/image" tone="secondary">
-                    去上传商品图
-                  </LinkButton>
+                  <Button
+                    type="button"
+                    tone="secondary"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    上传商品图
+                  </Button>
                 )
               }
             />
@@ -780,10 +793,12 @@ function PosterEditor({
       className="relative aspect-square overflow-hidden rounded-2xl border bg-gray-100"
       style={{ containerType: "inline-size" }}
     >
-      <img
+      <Image
         src={imageUrl}
         alt="generated poster background"
-        className="h-full w-full object-cover"
+        fill
+        className="object-cover"
+        unoptimized
       />
       {template.overlay?.kind === "bottom-gradient" && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-b from-transparent to-black/70" />
