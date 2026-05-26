@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { useDropzone } from "react-dropzone";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -96,6 +103,7 @@ export default function ImageGenerator() {
   const selectedCost = getImageTemplate(selectedTemplate)?.cost ?? 0;
   const insufficient =
     balance !== null && balance < selectedCost && selectedCost > 0;
+  const mobileStep = generatedImage ? 3 : file ? 2 : 1;
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
@@ -242,166 +250,228 @@ export default function ImageGenerator() {
   });
 
   return (
-    <div className={`space-y-6 ${posterFontClassName}`}>
+    <div className={`space-y-4 ${posterFontClassName}`}>
       <PageHeader
         eyebrow="创建 / 图片"
         title="图片生成"
-        description="上传一张商品照片，生成适合电商使用的商品图、海报、白底图或抠图结果。"
+        description="上传商品图，选择生成方式，在右侧直接查看、编辑和下载结果。"
       />
 
-      <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+      {errorMessage && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {errorMessage}
+        </div>
+      )}
 
-        <div className="mt-3 flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm">
-          <div className="text-gray-600">
-            余额：
-            <span className="font-semibold text-gray-900">
-              {balance === null ? "—" : balance}
-            </span>
-            <span className="ml-1 text-gray-400">积分</span>
-            {planExpired && (
-              <span className="ml-3 text-red-600">套餐已到期</span>
+      <div className="grid gap-4 lg:h-[calc(100vh-12rem)] lg:min-h-[640px] lg:grid-cols-[360px_minmax(0,1fr)]">
+        <section className="flex flex-col rounded-lg border border-gray-200 bg-white shadow-sm lg:min-h-0">
+          <div className="border-b border-gray-200 px-4 py-3">
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <div className="text-gray-600">
+                余额：
+                <span className="font-semibold text-gray-900">
+                  {balance === null ? "—" : balance}
+                </span>
+                <span className="ml-1 text-gray-400">积分</span>
+                {planExpired && (
+                  <span className="ml-2 text-red-600">套餐已到期</span>
+                )}
+              </div>
+              <Link
+                href="/account"
+                className="shrink-0 text-xs text-gray-500 underline hover:text-black"
+              >
+                激活 / 账户
+              </Link>
+            </div>
+          </div>
+
+          <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            <div className="flex items-center gap-2 text-xs font-medium text-gray-500 lg:hidden">
+              <StepPill active={mobileStep === 1}>1 上传</StepPill>
+              <StepPill active={mobileStep === 2}>2 生成</StepPill>
+              <StepPill active={mobileStep === 3}>3 结果</StepPill>
+            </div>
+
+            <div>
+              <div className="mb-2 flex items-baseline justify-between">
+                <h2 className="text-sm font-semibold text-gray-950">
+                  1. 上传商品图
+                </h2>
+                {file && (
+                  <span className="text-xs text-gray-500">
+                    {formatFileSize(file.size)}
+                  </span>
+                )}
+              </div>
+              <div
+                {...getRootProps()}
+                className={`cursor-pointer rounded-xl border-2 border-dashed p-4 text-center transition ${
+                  isDragActive
+                    ? "border-black bg-gray-100"
+                    : "border-gray-300 bg-white"
+                } ${loading ? "cursor-not-allowed opacity-50" : ""}`}
+              >
+                <input {...getInputProps()} />
+
+                {status && !generatedImage ? (
+                  <div className="flex min-h-36 items-center justify-center">
+                    <p className="text-sm font-medium text-gray-700">
+                      {status}
+                    </p>
+                  </div>
+                ) : image ? (
+                  <div>
+                    <img
+                      src={image}
+                      alt="preview"
+                      className="mx-auto max-h-40 rounded-lg object-contain"
+                    />
+                    <p className="mt-3 text-xs text-gray-500">
+                      {compressionInfo?.wasCompressed
+                        ? `已压缩: ${formatFileSize(
+                            compressionInfo.originalSize
+                          )} → ${formatFileSize(compressionInfo.compressedSize)}`
+                        : "使用原图尺寸上传"}
+                    </p>
+                    {compressionInfo && (
+                      <p className="text-xs text-gray-500">
+                        {compressionInfo.width} × {compressionInfo.height}px
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-400">
+                      点击或拖拽更换图片
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex min-h-36 flex-col items-center justify-center">
+                    <p className="text-sm font-medium text-gray-700">
+                      上传商品图片
+                    </p>
+                    <p className="mt-2 max-w-56 text-xs leading-5 text-gray-500">
+                      点击选择或拖拽上传，最大 10MB，会自动压缩到 1MB 内。
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-2 flex items-baseline justify-between">
+                <h2 className="text-sm font-semibold text-gray-950">
+                  2. 选择生成方式
+                </h2>
+                <span className="text-xs text-gray-500">
+                  {selectedCost === 0 ? "免费" : `${selectedCost} 积分`}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
+                {imageTemplates.map((item) => (
+                  <button
+                    key={item.name}
+                    disabled={!item.enabled || loading}
+                    onClick={() => {
+                      if (item.enabled && !loading) {
+                        setSelectedTemplate(item.name);
+                        setGeneratedImage(null);
+                        setFinalPosterImage(null);
+                        setErrorMessage("");
+                      }
+                    }}
+                    className={`rounded-lg border p-3 text-left transition ${
+                      !item.enabled
+                        ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                        : selectedTemplate === item.name
+                          ? "border-black bg-gray-50"
+                          : "border-gray-200 hover:border-black"
+                    } ${loading ? "opacity-50" : ""}`}
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <div className="text-sm font-medium">{item.name}</div>
+                      <div className="shrink-0 text-xs text-gray-500">
+                        {item.cost === 0 ? "免费" : `${item.cost} 积分`}
+                      </div>
+                    </div>
+                    <div className="mt-1 text-xs leading-5 opacity-70">
+                      {item.desc}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-200 p-4">
+            <div className="mb-3 text-xs leading-5 text-gray-500">
+              当前选择：
+              <span className="font-medium text-gray-900">
+                {selectedTemplate}
+              </span>
+              {selectedCost > 0 && (
+                <span className="ml-1">本次将扣 {selectedCost} 积分</span>
+              )}
+            </div>
+            {insufficient ? (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-3 text-sm text-yellow-800">
+                <div>
+                  积分不足（剩余 {balance}，需要 {selectedCost}）
+                </div>
+                <Link
+                  href="/account"
+                  className="shrink-0 rounded-lg bg-black px-3 py-2 text-white"
+                >
+                  去激活
+                </Link>
+              </div>
+            ) : (
+              <button
+                onClick={handleGenerate}
+                disabled={!file || loading || planExpired}
+                className="w-full rounded-lg bg-black py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+              >
+                {loading
+                  ? `${status || "处理中..."}`
+                  : planExpired
+                    ? "套餐已到期，请先激活"
+                    : selectedTemplate === TITLE_TEMPLATE_NAME
+                      ? "开始添加标题"
+                      : "生成商品图"}
+              </button>
             )}
           </div>
-          <Link
-            href="/account"
-            className="text-xs text-gray-500 underline hover:text-black"
-          >
-            激活 / 账户
-          </Link>
-        </div>
+        </section>
 
-        {errorMessage && (
-          <div className="mt-6 rounded-lg bg-red-50 p-4 text-sm text-red-700 border border-red-200">
-            {errorMessage}
+        <section className="min-h-[520px] rounded-lg border border-gray-200 bg-white shadow-sm lg:min-h-0 lg:overflow-y-auto">
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-950">
+                {generatedImage
+                  ? isPosterFlow
+                    ? "3. 编辑海报文字"
+                    : "3. 生成结果"
+                  : "3. 生成预览"}
+              </h2>
+              <p className="mt-1 text-xs text-gray-500">
+                {generatedImage
+                  ? "结果会保留在这里，可继续切换左侧模板重新生成。"
+                  : "上传图片并点击生成后，结果会出现在这里。"}
+              </p>
+            </div>
+            {generatedImage && !isPosterFlow && (
+              <a
+                href={generatedImage}
+                download
+                className="shrink-0 rounded-lg bg-black px-4 py-2 text-sm text-white"
+              >
+                打开/下载
+              </a>
+            )}
           </div>
-        )}
 
-        <div
-          {...getRootProps()}
-          className={`mt-8 cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition ${
-            isDragActive ? "border-black bg-gray-100" : "border-gray-300 bg-white"
-          } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
-        >
-          <input {...getInputProps()} />
-
-          {status && (
-            <div>
-              <p className="text-lg font-medium text-gray-700">{status}</p>
-            </div>
-          )}
-
-          {!status && image ? (
-            <div>
-              <img
-                src={image}
-                alt="preview"
-                className="mx-auto max-h-80 rounded-xl"
-              />
-              <p className="mt-4 text-sm text-gray-500">
-                {compressionInfo?.wasCompressed
-                  ? `已压缩: ${formatFileSize(
-                      compressionInfo.originalSize
-                    )} → ${formatFileSize(compressionInfo.compressedSize)}`
-                  : file && `文件: ${formatFileSize(file.size)}`}
-              </p>
-              {compressionInfo && (
-                <p className="text-sm text-gray-500">
-                  尺寸: {compressionInfo.width} × {compressionInfo.height}px
-                </p>
-              )}
-              <p className="text-sm text-gray-500">
-                ✓ 已准备好，使用压缩版本上传
-              </p>
-              <p className="text-sm text-gray-400 mt-2">点击或拖拽更换图片</p>
-            </div>
-          ) : !status ? (
-            <div>
-              <p className="text-lg font-medium text-gray-700">上传商品图片</p>
-              <p className="mt-2 text-sm text-gray-500">
-                点击选择图片，或拖拽上传（最大 10MB，将自动压缩到 1MB 内）
-              </p>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="mt-8 grid grid-cols-2 gap-4">
-          {imageTemplates.map((item) => (
-            <button
-              key={item.name}
-              disabled={!item.enabled || loading}
-              onClick={() => {
-                if (item.enabled && !loading) {
-                  setSelectedTemplate(item.name);
-                  setGeneratedImage(null);
-                  setFinalPosterImage(null);
-                  setErrorMessage("");
-                }
-              }}
-              className={`rounded-xl border p-4 text-left transition ${
-                !item.enabled
-                  ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
-                  : selectedTemplate === item.name
-                    ? "border-black bg-gray-50"
-                    : "border-gray-200 hover:border-black"
-              } ${loading ? "opacity-50" : ""}`}
-            >
-              <div className="flex items-baseline justify-between">
-                <div className="font-medium">{item.name}</div>
-                <div className="text-xs text-gray-500">
-                  {item.cost === 0 ? "免费" : `${item.cost} 积分`}
-                </div>
-              </div>
-              <div className="mt-1 text-sm opacity-70">{item.desc}</div>
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-4 text-sm text-gray-500">
-          当前选择：
-          <span className="font-medium text-gray-900">{selectedTemplate}</span>
-          {selectedCost > 0 && (
-            <span className="ml-2 text-gray-500">
-              · 本次将扣 {selectedCost} 积分
-            </span>
-          )}
-        </div>
-
-        {insufficient ? (
-          <div className="mt-8 flex items-center justify-between rounded-xl border border-yellow-300 bg-yellow-50 px-5 py-4 text-sm text-yellow-800">
-            <div>
-              积分不足（剩余 {balance}，需要 {selectedCost}）
-            </div>
-            <Link
-              href="/account"
-              className="rounded-lg bg-black px-4 py-2 text-white"
-            >
-              去激活
-            </Link>
-          </div>
-        ) : (
-          <button
-            onClick={handleGenerate}
-            disabled={!file || loading || planExpired}
-            className="mt-8 w-full rounded-xl bg-black py-3 font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-300"
-          >
-            {loading
-              ? `${status || "处理中..."}`
-              : planExpired
-                ? "套餐已到期，请先激活"
-                : selectedTemplate === TITLE_TEMPLATE_NAME
-                  ? "开始添加标题"
-                : "生成商品图"}
-          </button>
-        )}
-
-        {generatedImage && (
-          <div className="mt-8">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900">
-              {isPosterFlow ? "编辑海报文字" : "生成结果"}
-            </h2>
-            {isPosterFlow ? (
-              <div>
-                <div className="mb-4 grid grid-cols-2 gap-3">
+          {generatedImage ? (
+            isPosterFlow ? (
+              <div className="grid gap-4 p-4 xl:grid-cols-[220px_minmax(360px,1fr)]">
+                <div className="grid grid-cols-2 gap-2 xl:grid-cols-1 xl:self-start">
                   {posterTextTemplates.map((template) => (
                     <button
                       key={template.id}
@@ -411,7 +481,7 @@ export default function ImageGenerator() {
                         setPosterText(template.defaultText);
                         setFinalPosterImage(null);
                       }}
-                      className={`rounded-xl border p-3 text-left transition ${
+                      className={`rounded-lg border p-3 text-left transition ${
                         posterTemplateId === template.id
                           ? "border-black bg-gray-50"
                           : "border-gray-200 hover:border-black"
@@ -420,77 +490,101 @@ export default function ImageGenerator() {
                       <div className="text-sm font-semibold text-gray-900">
                         {template.name}
                       </div>
-                      <div className="mt-1 text-xs text-gray-500">
+                      <div className="mt-1 text-xs leading-5 text-gray-500">
                         {template.desc}
                       </div>
                     </button>
                   ))}
                 </div>
 
-                <div className="mx-auto max-w-xl">
-                  <PosterEditor
-                    editorRef={posterEditorRef}
-                    imageUrl={generatedImage}
-                    template={selectedPosterTemplate}
-                    values={posterText}
-                    onChange={handlePosterTextChange}
-                  />
-                </div>
-
-                <div className="mx-auto mt-4 flex max-w-xl flex-wrap items-center justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={handleRenderPoster}
-                    disabled={posterRendering}
-                    className="rounded-lg bg-black px-5 py-2 text-white disabled:cursor-not-allowed disabled:bg-gray-300"
-                  >
-                    {posterRendering ? "渲染中..." : "确认并生成海报"}
-                  </button>
-                  {finalPosterImage && (
-                    <a
-                      href={finalPosterImage}
-                      download
-                      className="rounded-lg border border-gray-300 px-5 py-2 text-gray-900 hover:border-black"
-                    >
-                      打开/下载图片
-                    </a>
-                  )}
-                </div>
-
-                {finalPosterImage && (
-                  <div className="mx-auto mt-6 max-w-xl">
-                    <h3 className="mb-3 text-base font-semibold text-gray-900">
-                      最终海报
-                    </h3>
-                    <img
-                      src={finalPosterImage}
-                      alt="final poster"
-                      className="rounded-2xl border bg-gray-100"
+                <div className="min-w-0">
+                  <div className="mx-auto max-w-[min(100%,560px)]">
+                    <PosterEditor
+                      editorRef={posterEditorRef}
+                      imageUrl={generatedImage}
+                      template={selectedPosterTemplate}
+                      values={posterText}
+                      onChange={handlePosterTextChange}
                     />
                   </div>
-                )}
+
+                  <div className="mx-auto mt-4 flex max-w-[min(100%,560px)] flex-wrap items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={handleRenderPoster}
+                      disabled={posterRendering}
+                      className="rounded-lg bg-black px-5 py-2 text-sm text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+                    >
+                      {posterRendering ? "渲染中..." : "确认并生成海报"}
+                    </button>
+                    {finalPosterImage && (
+                      <a
+                        href={finalPosterImage}
+                        download
+                        className="rounded-lg border border-gray-300 px-5 py-2 text-sm text-gray-900 hover:border-black"
+                      >
+                        打开/下载
+                      </a>
+                    )}
+                  </div>
+
+                  {finalPosterImage && (
+                    <div className="mx-auto mt-6 max-w-[min(100%,560px)]">
+                      <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                        最终海报
+                      </h3>
+                      <img
+                        src={finalPosterImage}
+                        alt="final poster"
+                        className="rounded-xl border bg-gray-100"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
-              <>
+              <div className="flex min-h-[460px] items-center justify-center p-4">
                 <img
                   src={generatedImage}
                   alt="generated"
-                  className="rounded-2xl border bg-gray-100"
+                  className="max-h-[calc(100vh-17rem)] rounded-xl border bg-gray-100 object-contain"
                   crossOrigin="anonymous"
                 />
-                <a
-                  href={generatedImage}
-                  download
-                  className="mt-4 inline-block rounded-lg bg-black px-5 py-2 text-white"
-                >
-                  打开/下载图片
-                </a>
-              </>
-            )}
-          </div>
-        )}
+              </div>
+            )
+          ) : (
+            <div className="flex min-h-[460px] flex-col items-center justify-center px-6 text-center">
+              <div className="rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-500">
+                等待生成
+              </div>
+              <p className="mt-4 max-w-sm text-sm leading-6 text-gray-500">
+                桌面端左侧完成上传和选择，右侧会直接显示结果；手机端按上传、生成、结果顺序向下操作。
+              </p>
+            </div>
+          )}
+        </section>
       </div>
     </div>
+  );
+}
+
+function StepPill({
+  active,
+  children,
+}: {
+  active: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <span
+      className={`rounded-full border px-2.5 py-1 ${
+        active
+          ? "border-black bg-black text-white"
+          : "border-gray-200 bg-gray-50 text-gray-500"
+      }`}
+    >
+      {children}
+    </span>
   );
 }
 
