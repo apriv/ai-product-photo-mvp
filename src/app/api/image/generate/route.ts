@@ -140,7 +140,7 @@ export async function POST(request: Request) {
 
     const imageFile = image as File;
 
-    // ----- Add title: no charge, no fal. Return the uploaded (already client-compressed) image. -----
+    // ----- Add title: no charge, no fal. Return the uploaded (already client-compressed) image and save it as an asset. -----
     if (template.kind === "title-overlay") {
       const imageUrl = await fileToDataUrl(imageFile);
       const duration = Date.now() - startTime;
@@ -150,7 +150,7 @@ export async function POST(request: Request) {
         template: templateName,
         duration: `${duration}ms`,
       });
-      await recordGeneration({
+      const generation = await recordGeneration({
         userId,
         feature: "image",
         template: templateName,
@@ -158,7 +158,22 @@ export async function POST(request: Request) {
         status: "SUCCESS",
         durationMs: duration,
       });
-      return NextResponse.json({ success: true, imageUrl });
+      const asset = await createAsset({
+        userId,
+        type: "IMAGE",
+        title: templateName,
+        sourceUrl: imageUrl,
+        template: templateName,
+        model: template.model,
+        provider: "local",
+        mimeType: imageFile.type,
+        generationLogId: generation?.id ?? null,
+      });
+      return NextResponse.json({
+        success: true,
+        imageUrl,
+        assetId: asset?.id ?? null,
+      });
     }
 
     // ----- Real generation: charge first, then call fal -----

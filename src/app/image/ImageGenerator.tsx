@@ -69,6 +69,7 @@ export default function ImageGenerator() {
   const [status, setStatus] = useState("");
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [finalPosterImage, setFinalPosterImage] = useState<string | null>(null);
+  const [assetId, setAssetId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [compressionInfo, setCompressionInfo] =
     useState<CompressionInfo | null>(null);
@@ -147,6 +148,7 @@ export default function ImageGenerator() {
       setCompressionInfo(result.info);
       setGeneratedImage(null);
       setFinalPosterImage(null);
+      setAssetId(null);
       setStatus("");
     } catch (error) {
       const errorMsg =
@@ -205,6 +207,7 @@ export default function ImageGenerator() {
 
       setGeneratedImage(data.imageUrl);
       setFinalPosterImage(null);
+      setAssetId(data.assetId ?? null);
       setPosterText(getDefaultPosterText(posterTemplateId));
       setStatus("");
       window.requestAnimationFrame(() => {
@@ -443,6 +446,7 @@ export default function ImageGenerator() {
                   setSelectedTemplate(nextTemplate);
                   setGeneratedImage(null);
                   setFinalPosterImage(null);
+                  setAssetId(null);
                   setErrorMessage("");
                 }}
               />
@@ -508,15 +512,22 @@ export default function ImageGenerator() {
                   : "上传图片并点击生成后，结果会出现在这里。"}
               </p>
             </div>
-            {generatedImage && !isPosterFlow && (
-              <a
-                href={generatedImage}
-                download
-                className="shrink-0 rounded-lg bg-black px-4 py-2 text-sm text-white"
-              >
-                打开/下载
-              </a>
-            )}
+            <div className="flex items-center gap-3">
+              {generatedImage && !isPosterFlow && (
+                <a
+                  href={generatedImage}
+                  download
+                  className="shrink-0 rounded-lg bg-black px-4 py-2 text-sm text-white"
+                >
+                  打开/下载
+                </a>
+              )}
+              {assetId && (
+                <Link href="/assets" className="shrink-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 hover:border-black">
+                  查看素材库
+                </Link>
+              )}
+            </div>
           </div>
 
           {generatedImage ? (
