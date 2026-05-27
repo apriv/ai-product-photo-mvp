@@ -13,7 +13,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "create-admin": "tsx scripts/create-admin.ts",
-    "generate-codes": "tsx scripts/generate-codes.ts"
+    "generate-codes": "tsx scripts/generate-codes.ts",
+    "test:gpt-key": "tsx scripts/test-gpt-key.ts"
   },
   "dependencies": {
     "@fal-ai/client": "^1.10.1",

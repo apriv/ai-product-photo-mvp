@@ -6,10 +6,8 @@ import {
   Button,
   Card,
   Input,
-  PageHeader,
   Tabs,
   Textarea,
-  cn,
 } from "@/components/ui";
 
 type CopyMode =
@@ -32,47 +30,50 @@ const copyModes: Array<{
   label: string;
   description: string;
   meta: string;
+  disabled?: boolean;
 }> = [
   {
+    value: "video-script",
+    label: "视频脚本",
+    description: "预留 hook、镜头段落、字幕和结尾 CTA。",
+    meta: "可用",
+  },
+  {
     value: "ad-title",
-    label: "广告标题",
+    label: "商品标题",
     description: "用于投放、商品卡片和落地页首屏。",
-    meta: "5 条",
+    meta: "待开放",
+    disabled: true,
   },
   {
     value: "selling-points",
     label: "卖点提炼",
     description: "把商品描述整理成可直接放进详情页的卖点。",
-    meta: "4 条",
+    meta: "待开放",
+    disabled: true,
   },
   {
     value: "cta",
     label: "CTA",
     description: "生成下单、咨询、领取优惠等行动引导。",
-    meta: "6 条",
+    meta: "待开放",
+    disabled: true,
   },
   {
     value: "tiktok",
     label: "TikTok 短文案",
     description: "偏短、偏口语，适合短视频标题和简介。",
-    meta: "3 条",
+    meta: "待开放",
+    disabled: true,
   },
   {
     value: "instagram",
     label: "Instagram 短文案",
     description: "偏生活方式表达，适合帖子和 Reels。",
-    meta: "3 条",
-  },
-  {
-    value: "video-script",
-    label: "视频脚本",
-    description: "预留 hook、镜头段落、字幕和结尾 CTA。",
-    meta: "结构化",
+    meta: "待开放",
+    disabled: true,
   },
 ];
-
-const toneOptions = ["清晰直接", "高端质感", "活泼口语", "限时促销"];
-const audienceOptions = ["新访客", "老客户", "价格敏感用户", "礼品购买者"];
 
 const placeholderByMode: Record<CopyMode, CopyResult[]> = {
   "ad-title": [
@@ -222,12 +223,10 @@ const placeholderByMode: Record<CopyMode, CopyResult[]> = {
 };
 
 export default function CopyStudio() {
-  const [mode, setMode] = useState<CopyMode>("ad-title");
+  const [mode, setMode] = useState<CopyMode>("video-script");
   const [productName, setProductName] = useState("");
   const [productContext, setProductContext] = useState("");
-  const [imageContext, setImageContext] = useState("");
-  const [tone, setTone] = useState(toneOptions[0]);
-  const [audience, setAudience] = useState(audienceOptions[0]);
+  const [imageFileName, setImageFileName] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [generationSeed, setGenerationSeed] = useState(1);
@@ -239,9 +238,11 @@ export default function CopyStudio() {
         ...item,
         body: `${item.body}\n\nContext placeholder: ${
           productName || "Product name"
-        } · ${tone} · ${audience} · draft ${generationSeed}`,
+        }${productContext ? ` · ${productContext}` : ""}${
+          imageFileName ? ` · ${imageFileName}` : ""
+        } · draft ${generationSeed}`,
       })),
-    [audience, generationSeed, mode, productName, tone]
+    [generationSeed, imageFileName, mode, productContext, productName]
   );
 
   async function copyResult(result: CopyResult) {
@@ -259,40 +260,35 @@ export default function CopyStudio() {
   }
 
   return (
-    <div className="space-y-4">
-      <PageHeader
-        eyebrow="创建 / 文案"
-        title="文案生成"
-        description="Placeholder copy studio for titles, selling points, CTAs, social captions, and video script drafts."
-        actions={
-          <Button type="button" onClick={() => setGenerationSeed((v) => v + 1)}>
-            重新生成
-          </Button>
-        }
-      />
-
-      <div className="grid gap-4 lg:h-[calc(100vh-12rem)] lg:min-h-[660px] lg:grid-cols-[380px_minmax(0,1fr)]">
+    <div>
+      <div className="grid gap-4 lg:h-[calc(100vh-7rem)] lg:min-h-0 lg:grid-cols-[360px_minmax(0,1fr)]">
         <section className="flex flex-col rounded-lg border border-gray-200 bg-white shadow-sm lg:min-h-0">
           <div className="border-b border-gray-200 px-4 py-3">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold text-gray-950">
-                  输入上下文
+                  商品信息
                 </div>
                 <div className="text-xs text-gray-500">
-                  后续文字 API 将读取这里的字段
+                  名称、描述和图片均可选
                 </div>
               </div>
-              <Badge tone="warning">Placeholder</Badge>
+              <Button
+                type="button"
+                className="h-9 px-3"
+                onClick={() => setGenerationSeed((v) => v + 1)}
+              >
+                重新生成
+              </Button>
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
             <Field label="商品名称">
               <Input
                 value={productName}
                 onChange={(event) => setProductName(event.target.value)}
-                placeholder="Placeholder product name"
+                placeholder="商品名称（可选）"
               />
             </Field>
 
@@ -300,36 +296,29 @@ export default function CopyStudio() {
               <Textarea
                 value={productContext}
                 onChange={(event) => setProductContext(event.target.value)}
-                placeholder="Placeholder product description, ingredients, audience, offer, or differentiators."
+                placeholder="商品描述、卖点、适用场景或优惠信息（可选）"
                 className="min-h-32"
               />
             </Field>
 
-            <Field label="图片结果上下文">
-              <Textarea
-                value={imageContext}
-                onChange={(event) => setImageContext(event.target.value)}
-                placeholder="Placeholder image context: generated poster, product photo style, visible scene, or asset id."
-                className="min-h-24"
-              />
+            <Field label="图片">
+              <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-5 text-center transition hover:border-gray-400 hover:bg-white">
+                <span className="text-sm font-medium text-gray-800">
+                  {imageFileName || "上传图片（可选）"}
+                </span>
+                <span className="mt-1 text-xs text-gray-500">
+                  支持商品图、场景图或已有素材
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={(event) => {
+                    setImageFileName(event.target.files?.[0]?.name ?? "");
+                  }}
+                />
+              </label>
             </Field>
-
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              <Field label="语气">
-                <SelectPills
-                  value={tone}
-                  options={toneOptions}
-                  onChange={setTone}
-                />
-              </Field>
-              <Field label="受众">
-                <SelectPills
-                  value={audience}
-                  options={audienceOptions}
-                  onChange={setAudience}
-                />
-              </Field>
-            </div>
 
             <Field label="生成类型">
               <Tabs
@@ -341,7 +330,7 @@ export default function CopyStudio() {
           </div>
         </section>
 
-        <section className="flex min-h-[620px] flex-col rounded-lg border border-gray-200 bg-white shadow-sm lg:min-h-0">
+        <section className="flex min-h-[560px] flex-col rounded-lg border border-gray-200 bg-white shadow-sm lg:min-h-0">
           <div className="border-b border-gray-200 px-4 py-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -443,39 +432,6 @@ function Field({
         {label}
       </span>
       {children}
-    </div>
-  );
-}
-
-function SelectPills({
-  value,
-  options,
-  onChange,
-}: {
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="grid gap-2">
-      {options.map((option) => {
-        const active = option === value;
-        return (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onChange(option)}
-            className={cn(
-              "min-h-10 rounded-lg border px-3 py-2 text-left text-sm transition",
-              active
-                ? "border-gray-950 bg-gray-50 text-gray-950"
-                : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"
-            )}
-          >
-            {option}
-          </button>
-        );
-      })}
     </div>
   );
 }

@@ -203,7 +203,7 @@ export default function AppShell({
           </div>
         </header>
 
-        <main className="min-h-[calc(100vh-4rem)] px-4 pb-24 pt-6 sm:px-6 lg:px-8">
+        <main className="min-h-[calc(100vh-4rem)] px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pb-6">
           <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </div>

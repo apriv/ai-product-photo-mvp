@@ -17,7 +17,6 @@ import {
   Card,
   EmptyState,
   Input,
-  PageHeader,
   Tabs,
   Textarea,
 } from "@/components/ui";
@@ -295,32 +294,27 @@ export default function ImageGenerator() {
   });
 
   return (
-    <div className={`space-y-4 ${posterFontClassName}`}>
-      <PageHeader
-        eyebrow="创建 / 图片"
-        title="图片生成"
-        description="上传商品图，选择生成方式，在右侧直接查看、编辑和下载结果。"
-      />
-
+    <div className={posterFontClassName}>
       {errorMessage && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {errorMessage}
         </div>
       )}
 
-      <div className="grid gap-4 lg:h-[calc(100vh-12rem)] lg:min-h-[640px] lg:grid-cols-[360px_minmax(0,1fr)]">
+      <div className="grid gap-4 lg:h-[calc(100vh-7rem)] lg:min-h-0 lg:grid-cols-[360px_minmax(0,1fr)]">
         <section className="flex flex-col rounded-lg border border-gray-200 bg-white shadow-sm lg:min-h-0">
           <div className="border-b border-gray-200 px-4 py-3">
-            <div className="flex items-center justify-between gap-3 text-sm">
-              <div className="text-gray-600">
-                余额：
-                <span className="font-semibold text-gray-900">
-                  {balance === null ? "—" : balance}
-                </span>
-                <span className="ml-1 text-gray-400">积分</span>
-                {planExpired && (
-                  <span className="ml-2 text-red-600">套餐已到期</span>
-                )}
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-gray-950">
+                  商品图片
+                </div>
+                <div className="mt-1 text-xs text-gray-500">
+                  余额 {balance === null ? "—" : balance} 积分
+                  {planExpired && (
+                    <span className="ml-2 text-red-600">套餐已到期</span>
+                  )}
+                </div>
               </div>
               <Link
                 href="/account"
@@ -331,7 +325,7 @@ export default function ImageGenerator() {
             </div>
           </div>
 
-          <div className="flex-1 space-y-4 overflow-y-auto p-4">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
             <div className="flex flex-wrap gap-2 text-xs font-medium text-gray-500 lg:hidden">
               <StepPill active={mobileStep === 1}>1 上传</StepPill>
               <StepPill active={mobileStep === 2}>2 选择方式</StepPill>
