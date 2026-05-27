@@ -36,7 +36,7 @@ const copyModes: Array<{
     value: "video-script",
     label: "视频脚本",
     description: "预留 hook、镜头段落、字幕和结尾 CTA。",
-    meta: "可用",
+    meta: "",
   },
   {
     value: "ad-title",
@@ -193,31 +193,19 @@ const placeholderByMode: Record<CopyMode, CopyResult[]> = {
   ],
   "video-script": [
     {
-      id: "script-hook",
-      label: "开头 Hook",
-      body: "Placeholder hook: name the problem, reveal the product, and create a reason to keep watching.",
-      tone: "warning",
+      id: "script-seeding",
+      label: "种草视频",
+      body: "开头用一个生活化场景带出需求，镜头快速展示商品外观和使用方式。中段突出一个最容易被理解的卖点，搭配近景细节和轻松口播。结尾引导用户收藏或点击了解更多。",
     },
     {
-      id: "script-shot-1",
-      label: "镜头 1",
-      body: "Placeholder shot paragraph: show the product in context with one clear visual action.",
+      id: "script-premium",
+      label: "高级感广告",
+      body: "画面以干净背景和慢节奏运镜开场，先展示商品质感，再切到关键细节。旁白保持简短克制，强调设计、体验和品质感。结尾用品牌式收束，留下清晰记忆点。",
     },
     {
-      id: "script-shot-2",
-      label: "镜头 2",
-      body: "Placeholder shot paragraph: zoom into the key detail or transformation.",
-    },
-    {
-      id: "script-subtitle",
-      label: "字幕文案",
-      body: "Placeholder subtitle line that can sit on top of the generated video.",
-    },
-    {
-      id: "script-cta",
-      label: "结尾 CTA",
-      body: "Placeholder closing CTA for purchase, inquiry, or coupon collection.",
-      tone: "success",
+      id: "script-feature",
+      label: "功能展示",
+      body: "第一镜头直接说明商品解决的问题，第二镜头展示核心功能的操作过程，第三镜头对比使用前后的变化。字幕用短句解释重点，结尾提醒用户按需选择或立即下单。",
     },
   ],
 };
@@ -229,20 +217,22 @@ export default function CopyStudio() {
   const [imageFileName, setImageFileName] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<string[]>([]);
-  const [generationSeed, setGenerationSeed] = useState(1);
+  const [hasGenerated, setHasGenerated] = useState(false);
 
   const selectedMode = copyModes.find((item) => item.value === mode) ?? copyModes[0];
   const results = useMemo(
     () =>
-      placeholderByMode[mode].map((item) => ({
-        ...item,
-        body: `${item.body}\n\nContext placeholder: ${
-          productName || "Product name"
-        }${productContext ? ` · ${productContext}` : ""}${
-          imageFileName ? ` · ${imageFileName}` : ""
-        } · draft ${generationSeed}`,
-      })),
-    [generationSeed, imageFileName, mode, productContext, productName]
+      hasGenerated
+        ? placeholderByMode[mode].map((item) => ({
+            ...item,
+            body: `${item.body}${
+              productName ? `\n\n参考商品：${productName}` : ""
+            }${productContext ? `\n参考描述：${productContext}` : ""}${
+              imageFileName ? `\n参考图片：${imageFileName}` : ""
+            }`,
+          }))
+        : [],
+    [hasGenerated, imageFileName, mode, productContext, productName]
   );
 
   async function copyResult(result: CopyResult) {
@@ -276,9 +266,13 @@ export default function CopyStudio() {
               <Button
                 type="button"
                 className="h-9 px-3"
-                onClick={() => setGenerationSeed((v) => v + 1)}
+                onClick={() => {
+                  setSavedIds([]);
+                  setCopiedId(null);
+                  setHasGenerated(true);
+                }}
               >
-                重新生成
+                生成
               </Button>
             </div>
           </div>
@@ -338,80 +332,86 @@ export default function CopyStudio() {
                   <h2 className="text-sm font-semibold text-gray-950">
                     {selectedMode.label}
                   </h2>
-                  <Badge tone="neutral">{selectedMode.meta}</Badge>
+                  {selectedMode.meta && (
+                    <Badge tone="neutral">{selectedMode.meta}</Badge>
+                  )}
                 </div>
                 <p className="mt-1 text-xs leading-5 text-gray-500">
                   {selectedMode.description}
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  tone="secondary"
-                  onClick={() => setSavedIds(results.map((item) => item.id))}
-                >
-                  全部保存
-                </Button>
-                <Button
-                  type="button"
-                  tone="secondary"
-                  onClick={() => {
-                    const text = results.map((item) => `${item.label}\n${item.body}`).join("\n\n");
-                    navigator.clipboard.writeText(text);
-                  }}
-                >
-                  全部复制
-                </Button>
-              </div>
+              {results.length > 0 && (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    tone="secondary"
+                    onClick={() => setSavedIds(results.map((item) => item.id))}
+                  >
+                    全部保存
+                  </Button>
+                  <Button
+                    type="button"
+                    tone="secondary"
+                    onClick={() => {
+                      const text = results.map((item) => `${item.label}\n${item.body}`).join("\n\n");
+                      navigator.clipboard.writeText(text);
+                    }}
+                  >
+                    全部复制
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
-            <div className="grid gap-3 xl:grid-cols-2">
-              {results.map((result) => {
-                const saved = savedIds.includes(result.id);
-                const copied = copiedId === result.id;
+            {results.length > 0 ? (
+              <div className="grid gap-3 xl:grid-cols-3">
+                {results.map((result) => {
+                  const saved = savedIds.includes(result.id);
+                  const copied = copiedId === result.id;
 
-                return (
-                  <Card key={result.id} className="flex min-h-44 flex-col p-4 shadow-none">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-semibold text-gray-950">
-                          {result.label}
-                        </h3>
-                        {result.tone && <Badge tone={result.tone}>脚本</Badge>}
+                  return (
+                    <Card key={result.id} className="flex min-h-44 flex-col p-4 shadow-none">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-semibold text-gray-950">
+                            {result.label}
+                          </h3>
+                          {result.tone && <Badge tone={result.tone}>脚本</Badge>}
+                        </div>
+                        <Badge tone={saved ? "success" : "neutral"}>
+                          {saved ? "已保存" : "草稿"}
+                        </Badge>
                       </div>
-                      <Badge tone={saved ? "success" : "neutral"}>
-                        {saved ? "已保存" : "草稿"}
-                      </Badge>
-                    </div>
-                    <p className="mt-3 flex-1 whitespace-pre-line text-sm leading-6 text-gray-700">
-                      {result.body}
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        tone="secondary"
-                        onClick={() => copyResult(result)}
-                      >
-                        {copied ? "已复制" : "复制"}
-                      </Button>
-                      <Button
-                        type="button"
-                        tone={saved ? "ghost" : "secondary"}
-                        onClick={() => toggleSaved(result.id)}
-                      >
-                        {saved ? "取消保存" : "保存到素材库"}
-                      </Button>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-sm leading-6 text-gray-600">
-              当前保存与复制为前端状态。文字 API、素材库写入和图片生成结果引用将在后续接入。
-            </div>
+                      <p className="mt-3 flex-1 whitespace-pre-line text-sm leading-6 text-gray-700">
+                        {result.body}
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          tone="secondary"
+                          onClick={() => copyResult(result)}
+                        >
+                          {copied ? "已复制" : "复制"}
+                        </Button>
+                        <Button
+                          type="button"
+                          tone={saved ? "ghost" : "secondary"}
+                          onClick={() => toggleSaved(result.id)}
+                        >
+                          {saved ? "取消保存" : "保存到素材库"}
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex h-full min-h-80 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 px-6 text-center text-sm text-gray-500">
+                填写任意商品信息后点击生成，脚本结果会显示在这里。
+              </div>
+            )}
           </div>
         </section>
       </div>
