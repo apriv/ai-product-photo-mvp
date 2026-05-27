@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Badge,
   Button,
@@ -217,23 +217,61 @@ export default function CopyStudio() {
   const [imageFileName, setImageFileName] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<string[]>([]);
-  const [hasGenerated, setHasGenerated] = useState(false);
+  const [results, setResults] = useState<CopyResult[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState("");
 
   const selectedMode = copyModes.find((item) => item.value === mode) ?? copyModes[0];
-  const results = useMemo(
-    () =>
-      hasGenerated
-        ? placeholderByMode[mode].map((item) => ({
-            ...item,
-            body: `${item.body}${
+
+  function buildResultCards(seedingBody: string) {
+    return placeholderByMode[mode].map((item) => ({
+      ...item,
+      body:
+        item.id === "script-seeding"
+          ? seedingBody
+          : `${item.body}${
               productName ? `\n\n参考商品：${productName}` : ""
             }${productContext ? `\n参考描述：${productContext}` : ""}${
               imageFileName ? `\n参考图片：${imageFileName}` : ""
             }`,
-          }))
-        : [],
-    [hasGenerated, imageFileName, mode, productContext, productName]
-  );
+    }));
+  }
+
+  async function generateCopy() {
+    setSavedIds([]);
+    setCopiedId(null);
+    setGenerationError("");
+    setIsGenerating(true);
+
+    try {
+      const response = await fetch("/api/copy/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productTitle: productName,
+          productDescription: productContext,
+        }),
+      });
+      const data = (await response.json()) as {
+        success?: boolean;
+        text?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !data.success || !data.text) {
+        throw new Error(data.error || "生成失败");
+      }
+
+      setResults(buildResultCards(data.text));
+    } catch (error) {
+      setResults([]);
+      setGenerationError(
+        error instanceof Error ? error.message : "生成失败，请稍后重试"
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  }
 
   async function copyResult(result: CopyResult) {
     await navigator.clipboard.writeText(result.body);
@@ -266,13 +304,10 @@ export default function CopyStudio() {
               <Button
                 type="button"
                 className="h-9 px-3"
-                onClick={() => {
-                  setSavedIds([]);
-                  setCopiedId(null);
-                  setHasGenerated(true);
-                }}
+                disabled={isGenerating}
+                onClick={generateCopy}
               >
-                生成
+                {isGenerating ? "生成中..." : "生成"}
               </Button>
             </div>
           </div>
@@ -407,7 +442,7 @@ export default function CopyStudio() {
               </div>
             ) : (
               <div className="flex h-full min-h-80 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 px-6 text-center text-sm text-gray-500">
-                填写任意商品信息后点击生成，脚本结果会显示在这里。
+                {generationError || "填写任意商品信息后点击生成，脚本结果会显示在这里。"}
               </div>
             )}
           </div>
