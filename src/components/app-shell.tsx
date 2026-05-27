@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { cn, Dropdown, DropdownLink, Sheet } from "./ui";
+import { cn, Sheet } from "./ui";
 
 type ShellUser = {
   username: string;
@@ -49,7 +49,7 @@ const createItems: NavItem[] = [
 const primaryItems: NavItem[] = [
   { href: "/", label: "首页", detail: "工作台总览", match: ["/"] },
   ...createItems,
-  { href: "/assets", label: "素材库", detail: "素材与历史" },
+  { href: "/assets", label: "素材库", detail: "素材与历史", disabled: true },
   { href: "/account", label: "账户", detail: "余额与套餐" },
 ];
 
@@ -192,13 +192,6 @@ export default function AppShell({
                   {wallet.balance} 积分
                 </Link>
               )}
-              <Dropdown label="创建">
-                <DropdownLink href="/create/image">图片生成</DropdownLink>
-                <DropdownLink href="/create/copy">文案生成</DropdownLink>
-                <DropdownLink href="/create/video" disabled>
-                  视频生成 · 待开放
-                </DropdownLink>
-              </Dropdown>
             </div>
           </div>
         </header>
@@ -292,7 +285,7 @@ function MobileBottomNav({ pathname }: { pathname: string }) {
   const items: NavItem[] = [
     { href: "/", label: "首页", match: ["/"] },
     { href: "/create/image", label: "创建", match: ["/create", "/image"] },
-    { href: "/assets", label: "素材" },
+    { href: "/assets", label: "素材", disabled: true },
     { href: "/account", label: "账户" },
   ];
 

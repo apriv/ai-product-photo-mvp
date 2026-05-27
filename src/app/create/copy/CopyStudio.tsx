@@ -380,9 +380,7 @@ export default function CopyStudio() {
                           </h3>
                           {result.tone && <Badge tone={result.tone}>脚本</Badge>}
                         </div>
-                        <Badge tone={saved ? "success" : "neutral"}>
-                          {saved ? "已保存" : "草稿"}
-                        </Badge>
+                        {saved && <Badge tone="success">已保存</Badge>}
                       </div>
                       <p className="mt-3 flex-1 whitespace-pre-line text-sm leading-6 text-gray-700">
                         {result.body}
