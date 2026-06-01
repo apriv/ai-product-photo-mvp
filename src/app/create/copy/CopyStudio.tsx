@@ -215,6 +215,7 @@ export default function CopyStudio() {
   const [productName, setProductName] = useState("");
   const [productContext, setProductContext] = useState("");
   const [imageFileName, setImageFileName] = useState("");
+  const [productImageDataUrl, setProductImageDataUrl] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [results, setResults] = useState<CopyResult[]>([]);
@@ -250,6 +251,7 @@ export default function CopyStudio() {
         body: JSON.stringify({
           productTitle: productName,
           productDescription: productContext,
+          productImageDataUrl,
         }),
       });
       const data = (await response.json()) as {
@@ -343,7 +345,26 @@ export default function CopyStudio() {
                   accept="image/*"
                   className="sr-only"
                   onChange={(event) => {
-                    setImageFileName(event.target.files?.[0]?.name ?? "");
+                    const file = event.target.files?.[0];
+                    setImageFileName(file?.name ?? "");
+                    setProductImageDataUrl("");
+
+                    if (!file) {
+                      return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      setProductImageDataUrl(
+                        typeof reader.result === "string" ? reader.result : ""
+                      );
+                    };
+                    reader.onerror = () => {
+                      setImageFileName("");
+                      setProductImageDataUrl("");
+                      setGenerationError("图片读取失败，请重新选择图片");
+                    };
+                    reader.readAsDataURL(file);
                   }}
                 />
               </label>

@@ -4,34 +4,48 @@ import logger from "@/lib/logger";
 import { createRequestId, getRequestMeta } from "@/lib/request-meta";
 import {
   buildSeedingVideoPrompt,
-  COPY_GPT_MODEL,
-} from "@/features/copy/gpt-config";
+  COPY_GEMINI_MODEL,
+} from "@/features/copy/gemini-config";
 
-type OpenAITextContent = {
-  type?: string;
+type GeminiPart = {
   text?: string;
+  inlineData?: {
+    mimeType: string;
+    data: string;
+  };
 };
 
-type OpenAIOutputItem = {
-  content?: OpenAITextContent[];
+type GeminiCandidate = {
+  content?: {
+    parts?: GeminiPart[];
+  };
 };
 
-type OpenAIResponse = {
-  output_text?: string;
-  output?: OpenAIOutputItem[];
+type GeminiResponse = {
+  candidates?: GeminiCandidate[];
   error?: { message?: string };
 };
 
-function extractOutputText(data: OpenAIResponse) {
-  if (data.output_text) return data.output_text.trim();
-
+function extractOutputText(data: GeminiResponse) {
   return (
-    data.output
-      ?.flatMap((item) => item.content ?? [])
+    data.candidates
+      ?.flatMap((candidate) => candidate.content?.parts ?? [])
       .map((item) => item.text ?? "")
       .join("\n")
       .trim() ?? ""
   );
+}
+
+function parseImageDataUrl(dataUrl: string | undefined) {
+  const match = dataUrl?.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (!match) {
+    return null;
+  }
+
+  return {
+    mimeType: match[1],
+    data: match[2],
+  };
 }
 
 export async function POST(request: Request) {
@@ -40,11 +54,11 @@ export async function POST(request: Request) {
 
   try {
     const user = await requireUser();
-    const apiKey = process.env.GPT_KEY?.trim();
+    const apiKey = process.env.GEMINI_KEY?.trim();
 
     if (!apiKey) {
       return NextResponse.json(
-        { success: false, error: "GPT_KEY 未配置" },
+        { success: false, error: "GEMINI_KEY 未配置" },
         { status: 500 }
       );
     }
@@ -52,27 +66,36 @@ export async function POST(request: Request) {
     const body = (await request.json()) as {
       productTitle?: string;
       productDescription?: string;
+      productImageDataUrl?: string;
     };
+    const imageInput = parseImageDataUrl(body.productImageDataUrl);
     const prompt = buildSeedingVideoPrompt({
       productTitle: body.productTitle,
       productDescription: body.productDescription,
+      hasProductImage: Boolean(imageInput),
     });
+    const parts: GeminiPart[] = [{ text: prompt }];
 
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: COPY_GPT_MODEL,
-        input: prompt,
-      }),
-    });
+    if (imageInput) {
+      parts.push({ inlineData: imageInput });
+    }
 
-    const data = (await response.json()) as OpenAIResponse;
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${COPY_GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts }],
+        }),
+      }
+    );
+
+    const data = (await response.json()) as GeminiResponse;
     if (!response.ok) {
-      logger.warn("OpenAI copy generation failed", {
+      logger.warn("Gemini copy generation failed", {
         ...requestMeta,
         userId: user.id,
         status: response.status,
@@ -92,7 +115,7 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ success: true, text, model: COPY_GPT_MODEL });
+    return NextResponse.json({ success: true, text, model: COPY_GEMINI_MODEL });
   } catch (error) {
     if (error instanceof AuthError) {
       return NextResponse.json(
