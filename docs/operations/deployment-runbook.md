@@ -31,8 +31,8 @@ tail -f /home/ubuntu/.pm2/logs/ai-product-photo-out.log
 - 上传更高画质
 
 Nginx 默认 `client_max_body_size` 是 1MB（当前未显式配置），所以前端把图片压缩到 1MB 兜底。以后要支持更高画质上传时：
-
-- 在 `/etc/nginx/sites-available/ai-product-photo` 的 `location /` 里加 `client_max_body_size 20m;`（或更大）
+- 现在 cat /etc/nginx/nginx.conf 里面是50m
+- 是否需要改为在 `/etc/nginx/sites-available/ai-product-photo` 的 `location /` 里加 `client_max_body_size 20m;`
 - `sudo nginx -t && sudo systemctl reload nginx`
 - 同步放宽前端 `src/lib/image-compression.ts` 的 `TARGET_SIZE` 和 `src/app/api/image/generate/route.ts` 的 `MAX_FILE_SIZE`
 

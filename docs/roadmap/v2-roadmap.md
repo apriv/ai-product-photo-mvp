@@ -136,6 +136,7 @@ git push origin archive/mvp-final
 - [ ] 少量固定视频模板。
 - [ ] 生成后保存到 Assets。
 - [ ] 不做复杂视频编辑器。
+- 模型fal-ai/kling-video/v2.5-turbo/pro/image-to-video
 
 验收标准：
 
