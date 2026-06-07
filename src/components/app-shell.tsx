@@ -42,7 +42,6 @@ const createItems: NavItem[] = [
     label: "视频生成",
     detail: "商品短视频",
     match: ["/create/video", "/video"],
-    disabled: true,
   },
 ];
 
