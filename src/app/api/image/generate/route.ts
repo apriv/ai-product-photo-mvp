@@ -150,7 +150,7 @@ export async function POST(request: Request) {
         template: templateName,
         duration: `${duration}ms`,
       });
-      const generation = await recordGeneration({
+      await recordGeneration({
         userId,
         feature: "image",
         template: templateName,
@@ -158,21 +158,10 @@ export async function POST(request: Request) {
         status: "SUCCESS",
         durationMs: duration,
       });
-      const asset = await createAsset({
-        userId,
-        type: "IMAGE",
-        title: templateName,
-        sourceUrl: imageUrl,
-        template: templateName,
-        model: template.model,
-        provider: "local",
-        mimeType: imageFile.type,
-        generationLogId: generation?.id ?? null,
-      });
       return NextResponse.json({
         success: true,
         imageUrl,
-        assetId: asset?.id ?? null,
+        assetId: null,
       });
     }
 

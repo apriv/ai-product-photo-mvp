@@ -39,12 +39,7 @@ export default function VideoStudio() {
     if (!task || task.status === "COMPLETED" || task.status === "FAILED") return;
     const timer = window.setTimeout(async () => {
       try {
-        const query = new URLSearchParams({
-          templateId: task.templateId,
-          chargeRef: task.chargeRef,
-          startedAt: String(task.startedAt),
-        });
-        const response = await fetch(`/api/video/tasks/${task.requestId}?${query}`, {
+        const response = await fetch(`/api/video/tasks/${task.requestId}`, {
           cache: "no-store",
         });
         const data = await response.json();

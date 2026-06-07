@@ -8,6 +8,7 @@ import {
 } from "@/lib/credits";
 import { refundCredits } from "@/lib/refund-credits";
 import { createRequestId } from "@/lib/request-meta";
+import { prisma } from "@/lib/prisma";
 import {
   getVideoTemplate,
   VIDEO_MODEL,
@@ -18,6 +19,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 export async function POST(request: Request) {
   let userId = "";
   let cost = 0;
+  let falRequestId = "";
   const chargeRef = createRequestId();
 
   try {
@@ -55,6 +57,19 @@ export async function POST(request: Request) {
           "blur, distortion, morphing product, duplicated product, text, subtitles, watermark",
       },
     });
+    falRequestId = queued.request_id;
+    const task = await prisma.videoTask.create({
+      data: {
+        requestId: queued.request_id,
+        userId,
+        templateId: template.id,
+        template: template.name,
+        model: VIDEO_MODEL,
+        cost,
+        chargeRef,
+        status: "IN_QUEUE",
+      },
+    });
 
     return NextResponse.json({
       success: true,
@@ -66,10 +81,13 @@ export async function POST(request: Request) {
         templateName: template.name,
         cost,
         chargeRef,
-        startedAt: Date.now(),
+        startedAt: task.createdAt.getTime(),
       },
     });
   } catch (error) {
+    if (falRequestId) {
+      await fal.queue.cancel(VIDEO_MODEL, { requestId: falRequestId }).catch(() => {});
+    }
     if (userId && cost) await refundCredits(userId, cost, chargeRef);
     if (
       error instanceof InsufficientCreditsError ||
