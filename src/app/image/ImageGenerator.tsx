@@ -60,7 +60,6 @@ export default function ImageGenerator() {
   const router = useRouter();
   const posterEditorRef = useRef<HTMLDivElement | null>(null);
   const resultPanelRef = useRef<HTMLElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState("社媒海报");
@@ -286,7 +285,7 @@ export default function ImageGenerator() {
     }
   };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: { "image/*": [] },
     multiple: false,
@@ -356,7 +355,7 @@ export default function ImageGenerator() {
                     : "border-gray-300 bg-white"
                 } ${loading ? "cursor-not-allowed opacity-50" : ""}`}
               >
-                <input {...getInputProps()} ref={fileInputRef} />
+                <input {...getInputProps()} />
 
                 {status && !generatedImage ? (
                   <div className="flex min-h-36 items-center justify-center">
@@ -395,7 +394,8 @@ export default function ImageGenerator() {
                           type="button"
                           tone="secondary"
                           className="w-full"
-                          onClick={() => {
+                          onClick={(event) => {
+                            event.stopPropagation();
                             setFile(null);
                             setImage(null);
                             setGeneratedImage(null);
@@ -743,7 +743,7 @@ export default function ImageGenerator() {
                   <Button
                     type="button"
                     tone="secondary"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={open}
                   >
                     上传商品图
                   </Button>

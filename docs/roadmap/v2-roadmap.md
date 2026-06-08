@@ -130,6 +130,7 @@ git push origin archive/mvp-final
 - [x] 明确视频模型和成本。
 - [x] 明确视频积分价格：每次 80 积分。
 - 模型fal-ai/kling-video/v2.5-turbo/pro/image-to-video
+- 我想把图生脚本的功能，放进视频生成，让工作线变得更自然。上传图片 - 选择视频脚本风格（种草视频/高级感广告/功能展示） - 查看后确认/重新生成/
 
 验收标准：
 
