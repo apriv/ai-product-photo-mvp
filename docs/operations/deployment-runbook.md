@@ -5,7 +5,7 @@
 ## 服务器更新代码
 
 ```bash
-ssh ubuntu@43.129.234.2
+ssh -i $env:USERPROFILE\.ssh\lightsail-sg-2g.pem ubuntu@52.77.73.4
 cd ~/ai-product-photo-mvp
 ```
 ```bash
