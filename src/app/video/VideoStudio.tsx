@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { Badge, Button, Card, Tabs, Textarea } from "@/components/ui";
-import { videoTemplates } from "@/features/video/templates";
+import { Badge, Button, Card, Textarea } from "@/components/ui";
 
 type Task = {
   requestId: string;
@@ -26,15 +25,14 @@ const statusLabels = {
 
 export default function VideoStudio() {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [templateId, setTemplateId] = useState(videoTemplates[0].id);
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState("");
-  const [script, setScript] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [prompt, setPrompt] = useState("");
+  const [aspectRatio, setAspectRatio] = useState<"9:16" | "16:9">("9:16");
+  const [resolution, setResolution] = useState<"480p" | "720p">("480p");
   const [task, setTask] = useState<Task | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const selected = videoTemplates.find((item) => item.id === templateId)!;
-
   useEffect(() => {
     if (!task || task.status === "COMPLETED" || task.status === "FAILED") return;
     const timer = window.setTimeout(async () => {
@@ -53,28 +51,40 @@ export default function VideoStudio() {
     return () => window.clearTimeout(timer);
   }, [task]);
 
-  function chooseFile(nextFile?: File) {
-    if (!nextFile) return;
+  function chooseFiles(nextFiles: FileList | null) {
+    if (!nextFiles?.length) return;
     setError("");
-    if (!nextFile.type.startsWith("image/") || nextFile.size > 10 * 1024 * 1024) {
+    const selected = Array.from(nextFiles);
+    if (files.length + selected.length > 4) {
+      setError("最多上传 4 张图片");
+      return;
+    }
+    if (selected.some((file) => !file.type.startsWith("image/") || file.size > 10 * 1024 * 1024)) {
       setError("请选择小于 10MB 的图片");
       return;
     }
-    if (preview) URL.revokeObjectURL(preview);
-    setFile(nextFile);
-    setPreview(URL.createObjectURL(nextFile));
+    setFiles((current) => [...current, ...selected]);
+    setPreviews((current) => [...current, ...selected.map(URL.createObjectURL)]);
     setTask(null);
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  function removeFile(index: number) {
+    URL.revokeObjectURL(previews[index]);
+    setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setPreviews((current) => current.filter((_, itemIndex) => itemIndex !== index));
   }
 
   async function submit() {
-    if (!file) return;
+    if (!files.length || !prompt.trim()) return;
     setSubmitting(true);
     setError("");
     try {
       const form = new FormData();
-      form.append("image", file);
-      form.append("templateId", templateId);
-      form.append("script", script);
+      files.forEach((file) => form.append("images", file));
+      form.append("prompt", prompt);
+      form.append("aspectRatio", aspectRatio);
+      form.append("resolution", resolution);
       const response = await fetch("/api/video/tasks", { method: "POST", body: form });
       const data = await response.json();
       if (!response.ok || !data.success) throw new Error(data.error || "提交失败");
@@ -94,66 +104,64 @@ export default function VideoStudio() {
         <Card className="p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">1. 上传商品图</h2>
-            <span className="text-xs text-gray-500">JPG / PNG · 10MB 内</span>
+            <span className="text-xs text-gray-500">最多 4 张 · 每张 10MB 内</span>
           </div>
           <button
             type="button"
             disabled={Boolean(active)}
             onClick={() => inputRef.current?.click()}
-            className="mt-4 flex aspect-[16/10] w-full items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500 transition hover:border-gray-500 disabled:cursor-not-allowed"
+            className="mt-4 flex min-h-28 w-full items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500 transition hover:border-gray-500 disabled:cursor-not-allowed"
           >
-            {preview ? (
+            点击选择商品图片（可多选）
+          </button>
+          {previews.length > 0 && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              {previews.map((preview, index) => (
+                <div key={preview} className="relative aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
               <Image
                 src={preview}
-                alt="商品图预览"
-                width={800}
-                height={500}
+                    alt={`商品图预览 ${index + 1}`}
+                    fill
                 unoptimized
                 className="h-full w-full object-contain"
               />
-            ) : (
-              "点击选择商品图片"
-            )}
-          </button>
+                  {!active && <button type="button" onClick={() => removeFile(index)} className="absolute right-2 top-2 rounded bg-white/90 px-2 py-1 text-xs shadow">删除</button>}
+                </div>
+              ))}
+            </div>
+          )}
           <input
             ref={inputRef}
             type="file"
             accept="image/*"
+            multiple
             className="hidden"
-            onChange={(event) => chooseFile(event.target.files?.[0])}
+            onChange={(event) => chooseFiles(event.target.files)}
           />
         </Card>
 
         <Card className="p-5">
-          <h2 className="text-sm font-semibold">2. 选择视频模板</h2>
-          <Tabs
-            className="mt-4"
-            value={templateId}
-            disabled={Boolean(active)}
-            onChange={setTemplateId}
-            items={videoTemplates.map((item) => ({
-              value: item.id,
-              label: item.name,
-              description: item.desc,
-              meta: `${item.cost} 积分`,
-            }))}
-          />
+          <h2 className="text-sm font-semibold">2. 视频设置</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <OptionButtons label="画面比例" value={aspectRatio} options={["9:16", "16:9"]} disabled={Boolean(active)} onChange={(value) => setAspectRatio(value as "9:16" | "16:9")} />
+            <OptionButtons label="清晰度" value={resolution} options={["480p", "720p"]} disabled={Boolean(active)} onChange={(value) => setResolution(value as "480p" | "720p")} />
+          </div>
         </Card>
 
         <Card className="p-5">
-          <h2 className="text-sm font-semibold">3. 补充脚本或创意方向</h2>
+          <h2 className="text-sm font-semibold">3. Prompt</h2>
           <Textarea
             className="mt-4 min-h-36"
             maxLength={1200}
             disabled={Boolean(active)}
-            value={script}
-            onChange={(event) => setScript(event.target.value)}
-            placeholder="例如：开场突出包装质感，中段缓慢展示产品细节，整体高级、克制。"
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            placeholder="描述你想生成的视频内容、镜头运动和风格。"
           />
           <div className="mt-4 flex items-center justify-between gap-3">
-            <span className="text-xs text-gray-500">{script.length}/1200</span>
-            <Button disabled={!file || submitting || Boolean(active)} onClick={submit}>
-              {submitting ? "正在提交..." : task?.status === "FAILED" ? "重新生成" : `生成视频 · ${selected.cost} 积分`}
+            <span className="text-xs text-gray-500">{prompt.length}/1200</span>
+            <Button disabled={!files.length || !prompt.trim() || submitting || Boolean(active)} onClick={submit}>
+              {submitting ? "正在提交..." : task?.status === "FAILED" ? "重新生成" : "生成视频 · 80 积分"}
             </Button>
           </div>
         </Card>
@@ -193,11 +201,26 @@ export default function VideoStudio() {
           <div className="mt-5 flex min-h-[430px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
             <div>
               <div className="text-sm font-medium text-gray-700">视频预览将在这里出现</div>
-              <p className="mt-2 max-w-sm text-sm leading-6 text-gray-500">上传商品图、选择模板并填写脚本后即可提交长任务。</p>
+              <p className="mt-2 max-w-sm text-sm leading-6 text-gray-500">上传商品图并填写 Prompt 后即可提交生成任务。</p>
             </div>
           </div>
         )}
       </Card>
+    </div>
+  );
+}
+
+function OptionButtons({ label, value, options, disabled, onChange }: { label: string; value: string; options: string[]; disabled: boolean; onChange: (value: string) => void }) {
+  return (
+    <div>
+      <div className="text-xs text-gray-500">{label}</div>
+      <div className="mt-2 flex gap-2">
+        {options.map((option) => (
+          <button key={option} type="button" disabled={disabled} onClick={() => onChange(option)} className={`h-10 flex-1 rounded-lg border text-sm font-medium transition disabled:cursor-not-allowed ${value === option ? "border-gray-950 bg-gray-950 text-white" : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"}`}>
+            {option}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

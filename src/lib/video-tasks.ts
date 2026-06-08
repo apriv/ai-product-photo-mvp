@@ -1,36 +1,36 @@
 import "server-only";
-import { fal } from "@/lib/fal-client";
 import { prisma } from "@/lib/prisma";
 import { createAsset } from "@/lib/assets";
 import { recordGeneration } from "@/lib/generation-log";
-import { VIDEO_MODEL } from "@/features/video/templates";
+import { getKieTask } from "@/lib/kie-client";
 import type { VideoTaskModel } from "@/generated/prisma/models";
 
-type VideoResult = { video?: { url?: string; content_type?: string } };
+type VideoResult = { resultUrls?: string[] };
 
 export async function syncVideoTask(task: VideoTaskModel) {
   if (task.status === "COMPLETED" || task.status === "FAILED") return task;
 
   try {
-    const status = await fal.queue.status(VIDEO_MODEL, {
-      requestId: task.requestId,
-      logs: true,
-    });
-    if (status.status !== "COMPLETED") {
+    const status = await getKieTask(task.requestId);
+    if (status.state === "fail") {
       return prisma.videoTask.update({
         where: { id: task.id },
-        data: { status: status.status },
+        data: { status: "FAILED", errorMsg: (status.failMsg || "Kie 视频生成失败").slice(0, 500) },
+      });
+    }
+    if (status.state !== "success") {
+      return prisma.videoTask.update({
+        where: { id: task.id },
+        data: { status: status.state === "generating" ? "IN_PROGRESS" : "IN_QUEUE" },
       });
     }
 
-    const result = await fal.queue.result(VIDEO_MODEL, {
-      requestId: task.requestId,
-    });
-    const video = (result.data as VideoResult).video;
-    if (!video?.url) throw new Error("模型未返回视频链接");
+    const result = JSON.parse(status.resultJson || "{}") as VideoResult;
+    const videoUrl = result.resultUrls?.[0];
+    if (!videoUrl) throw new Error("模型未返回视频链接");
 
     const existing = await prisma.asset.findFirst({
-      where: { userId: task.userId, sourceUrl: video.url, type: "VIDEO" },
+      where: { userId: task.userId, sourceUrl: videoUrl, type: "VIDEO" },
     });
     const generation = existing
       ? null
@@ -49,11 +49,11 @@ export async function syncVideoTask(task: VideoTaskModel) {
         userId: task.userId,
         type: "VIDEO",
         title: task.template,
-        sourceUrl: video.url,
+        sourceUrl: videoUrl,
         template: task.template,
         model: task.model,
-        provider: "fal",
-        mimeType: video.content_type ?? "video/mp4",
+        provider: "kie",
+        mimeType: "video/mp4",
         generationLogId: generation?.id ?? null,
       }));
 
@@ -61,7 +61,7 @@ export async function syncVideoTask(task: VideoTaskModel) {
       where: { id: task.id },
       data: {
         status: "COMPLETED",
-        sourceUrl: video.url,
+        sourceUrl: videoUrl,
         assetId: asset?.id ?? null,
         completedAt: new Date(),
       },
